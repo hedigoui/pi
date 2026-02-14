@@ -5,16 +5,23 @@
 [![License][license-shield]][license-url]
 <!-- Add more if you want, e.g. LinkedIn or custom ones -->
 
-[contributors-shield]: https://img.shields.io/github/contributors/your-username/your-repo-name?style=for-the-badge&color=red
-[contributors-url]: https://github.com/your-username/your-repo-name/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/your-username/your-repo-name?style=for-the-badge&color=blue
-[forks-url]: https://github.com/your-username/your-repo-name/network/members
-[stars-shield]: https://img.shields.io/github/stars/your-username/your-repo-name?style=for-the-badge&color=orange
-[stars-url]: https://github.com/your-username/your-repo-name/stargazers
-[issues-shield]: https://img.shields.io/github/issues/your-username/your-repo-name?style=for-the-badge&color=yellow
-[issues-url]: https://github.com/your-username/your-repo-name/issues
-[license-shield]: https://img.shields.io/github/license/your-username/your-repo-name?style=for-the-badge
-[license-url]: https://github.com/your-username/your-repo-name/blob/main/LICENSE
+<p align="center">
+  <a href="https://github.com/hedigoui/pi/graphs/contributors">
+    <img src="https://img.shields.io/github/contributors/hedigoui/pi?color=brightgreen&logo=github" alt="Contributors"/>
+  </a>
+  <a href="https://github.com/hedigoui/pi/network/members">
+    <img src="https://img.shields.io/github/forks/hedigoui/pi?color=blue&logo=github" alt="Forks"/>
+  </a>
+  <a href="https://github.com/hedigoui/pi/stargazers">
+    <img src="https://img.shields.io/github/stars/hedigoui/pi?color=yellow&logo=github" alt="Stars"/>
+  </a>
+  <a href="https://github.com/hedigoui/pi/issues">
+    <img src="https://img.shields.io/github/issues/hedigoui/pi?color=orange&logo=github" alt="Issues"/>
+  </a>
+  <a href="https://github.com/hedigoui/pi/blob/main/LICENSE">
+    <img src="https://img.shields.io/github/license/hedigoui/pi?color=important&logo=opensource" alt="License"/>
+  </a>
+</p>
 
 <br>
 
@@ -34,9 +41,9 @@
   <br />
   <a href="https://your-live-site-url.com">View Live Site</a>
   ·
-  <a href="https://github.com/your-username/your-repo-name/issues">Report Bug</a>
+  <a href="https://github.com/hedigoui/pi/issues">Report Bug</a>
   ·
-  <a href="https://github.com/your-username/your-repo-name/issues/new?labels=enhancement&template=feature_request.md">Request Feature</a>
+  <a href="https://github.com/hedigoui/pi/issues/new?labels=enhancement&template=feature_request.md">Request Feature</a>
 </p>
 
 <br>
