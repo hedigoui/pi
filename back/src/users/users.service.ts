@@ -50,7 +50,7 @@ export class UsersService {
         firstName: data.firstName,
         lastName: data.lastName,
         role: data.role,
-        isActive: data.isActive ?? true,
+        isActive: data.isActive ?? false,
         createdAt: new Date(),
         updatedAt: new Date()
       });

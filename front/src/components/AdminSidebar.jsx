@@ -23,11 +23,11 @@ const AdminSidebar = () => {
         <img src="/logo.svg" alt="Logo" className={styles.logoIcon} />
         <span className={styles.logoText}>
           <span className={styles.letterRed}>E</span>
-          <span className={styles.letterGrey}>V</span>
-          <span className={styles.letterBlack}>A</span>
-          <span className={styles.letterRed}>L</span>
-          <span className={styles.letterGrey}>U</span>
-          <span className={styles.letterBlack}>A</span>
+          <span className={styles.letterGrey}>v</span>
+          <span className={styles.letterBlack}>a</span>
+          <span className={styles.letterRed}>l</span>
+          <span className={styles.letterGrey}>A</span>
+          <span className={styles.letterBlack}>I</span>
         </span>
       </div>
 

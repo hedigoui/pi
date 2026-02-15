@@ -51,7 +51,7 @@ const Signup = () => {
         firstName,
         lastName,
         role: selectedRole,
-        isActive: true, // Add this field
+        isActive: false, // Add this field
       }),
     });
 
@@ -94,16 +94,16 @@ const Signup = () => {
             </div>
             <span className={styles.logoText}>
               <span className={styles.letterWhite}>E</span>
-              <span className={styles.letterLight}>V</span>
+              <span className={styles.letterLight}>v</span>
+              <span className={styles.letterWhite}>a</span>
+              <span className={styles.letterLight}>l</span>
               <span className={styles.letterWhite}>A</span>
-              <span className={styles.letterLight}>L</span>
-              <span className={styles.letterWhite}>U</span>
-              <span className={styles.letterLight}>A</span>
+              <span className={styles.letterLight}>I</span>
             </span>
           </div>
 
           <div className={styles.welcomeText}>
-            <h1>Join EVALUA<br />Platform</h1>
+            <h1>Join EvalAI<br />Platform</h1>
             <p className={styles.welcomeSubtext}>
               AI-Powered Oral Performance Assessment
             </p>
@@ -308,7 +308,7 @@ const Signup = () => {
         </div>
 
         <footer className={styles.footer}>
-          EVALUA © 2026
+          EvalAI © 2026
         </footer>
       </div>
     </div>

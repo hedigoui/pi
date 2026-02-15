@@ -38,21 +38,21 @@ export class EmailService {
     console.log(`Attempting to send welcome email to ${email} for ${name}`);
     
     const mailOptions = {
-      from: `"EVALUA Platform" <${process.env.EMAIL_USER}>`,
+      from: `"EvalAI Platform" <${process.env.EMAIL_USER}>`,
       to: email,
-      subject: 'Welcome to EVALUA Platform!',
+      subject: 'Welcome to EvalAI Platform!',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f9f9f9; padding: 30px; border-radius: 10px;">
           <div style="text-align: center; margin-bottom: 30px;">
             <div style="background: #E31837; width: 60px; height: 60px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 20px;">
               <span style="color: white; font-size: 24px; font-weight: bold;">E</span>
             </div>
-            <h1 style="color: #E31837; margin: 0;">Welcome to EVALUA!</h1>
+            <h1 style="color: #E31837; margin: 0;">Welcome to EvalAI!</h1>
           </div>
           
           <p style="font-size: 16px; color: #333; line-height: 1.6;">Hello <strong>${name}</strong>,</p>
           
-          <p style="font-size: 16px; color: #333; line-height: 1.6;">We're excited to have you on board. EVALUA is an AI-Powered Oral Performance Assessment platform that will help you improve your communication skills.</p>
+          <p style="font-size: 16px; color: #333; line-height: 1.6;">We're excited to have you on board. EvalAI is an AI-Powered Oral Performance Assessment platform that will help you improve your communication skills.</p>
           
           <div style="background: white; padding: 20px; border-radius: 8px; margin: 25px 0;">
             <h2 style="color: #E31837; font-size: 18px; margin-top: 0;">Getting Started:</h2>
@@ -66,7 +66,7 @@ export class EmailService {
           <p style="font-size: 16px; color: #333; line-height: 1.6;">If you have any questions, feel free to contact our support team.</p>
           
           <div style="margin-top: 30px; padding: 20px; background-color: #f0f0f0; border-radius: 5px; text-align: center;">
-            <p style="margin: 0; color: #666;">Best regards,<br><strong>The EVALUA Team</strong></p>
+            <p style="margin: 0; color: #666;">Best regards,<br><strong>The EvalAI Team</strong></p>
           </div>
         </div>
       `,
@@ -94,9 +94,9 @@ export class EmailService {
     console.log(`Attempting to send status change email to ${email} for ${name} - Status: ${status}`);
     
     const mailOptions = {
-      from: `"EVALUA Platform" <${process.env.EMAIL_USER}>`,
+      from: `"EvalAI Platform" <${process.env.EMAIL_USER}>`,
       to: email,
-      subject: `Account ${status} - EVALUA Platform`,
+      subject: `Account ${status} - EvalAI Platform`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f9f9f9; padding: 30px; border-radius: 10px;">
           <div style="text-align: center; margin-bottom: 30px;">
@@ -109,7 +109,7 @@ export class EmailService {
           <p style="font-size: 16px; color: #333; line-height: 1.6;">Hello <strong>${name}</strong>,</p>
           
           <p style="font-size: 16px; color: #333; line-height: 1.6;">
-            Your EVALUA account has been <strong style="color: ${statusColor}; font-size: 18px;">${status}</strong>.
+            Your EvalAI account has been <strong style="color: ${statusColor}; font-size: 18px;">${status}</strong>.
           </p>
           
           <div style="background: ${backgroundColor}; padding: 20px; border-radius: 8px; margin: 25px 0; border-left: 4px solid ${borderColor};">
@@ -122,7 +122,7 @@ export class EmailService {
           </div>
           
           <div style="margin-top: 30px; padding: 20px; background-color: #f0f0f0; border-radius: 5px; text-align: center;">
-            <p style="margin: 0; color: #666;">Best regards,<br><strong>The EVALUA Team</strong></p>
+            <p style="margin: 0; color: #666;">Best regards,<br><strong>The EvalAI Team</strong></p>
           </div>
         </div>
       `,
