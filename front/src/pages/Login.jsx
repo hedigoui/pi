@@ -70,8 +70,7 @@ const Login = () => {
           return;
         }
 
-        // Show success message
-        alert(`Welcome back, ${data.user.firstName || 'User'}!`);
+        // ...removed welcome back popup...
         
         // Navigate based on role with explicit mapping
         console.log('Attempting to navigate based on role:', userRole);

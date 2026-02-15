@@ -68,9 +68,7 @@ const Dashboard = () => {
               <span style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#22c55e', display: 'inline-block' }} />
               <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Online</span>
             </div>
-            <h1 style={{ fontSize: '1.75rem', fontWeight: '800', color: '#1a1a2e', letterSpacing: '-0.03em', lineHeight: '1.2' }}>
-              Welcome back 👋
-            </h1>
+            {/* Removed 'Welcome back' greeting */}
             <p style={{ color: '#94a3b8', fontSize: '0.85rem', marginTop: '0.3rem' }}>Here's how your oral skills are evolving</p>
           </div>
 
@@ -92,7 +90,7 @@ const Dashboard = () => {
             ))}
             <div style={{ position: 'absolute', bottom: '1.2rem', left: '1.5rem', right: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', zIndex: 10 }}>
               <div>
-                <span style={{ display: 'inline-block', padding: '0.25rem 0.65rem', background: 'rgba(227,24,55,0.85)', borderRadius: '6px', fontSize: '0.65rem', fontWeight: '700', color: '#fff', marginBottom: '0.4rem', letterSpacing: '0.05em' }}>EVALUA</span>
+                <span style={{ display: 'inline-block', padding: '0.25rem 0.65rem', background: 'rgba(227,24,55,0.85)', borderRadius: '6px', fontSize: '0.65rem', fontWeight: '700', color: '#fff', marginBottom: '0.4rem', letterSpacing: '0.05em' }}>EvalAI</span>
                 <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.82rem', fontWeight: '500' }}>Speak. Practice. Excel.</p>
               </div>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
