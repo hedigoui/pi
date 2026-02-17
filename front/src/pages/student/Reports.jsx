@@ -160,58 +160,6 @@ const Reports = () => {
               </div>
             </div>
           </div>
-
-          {/* Evaluation History */}
-          <div style={{
-            background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(0,0,0,0.06)', borderRadius: '20px', padding: '1.5rem',
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <FileText size={16} style={{ color: '#E31837' }} />
-                <h3 style={{ fontSize: '0.95rem', fontWeight: '700', color: '#1a1a2e' }}>Evaluation History</h3>
-              </div>
-              <span style={{ fontSize: '0.68rem', fontWeight: '600', color: '#E31837', cursor: 'pointer' }}>View all →</span>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              {evaluations.map((ev) => (
-                <div key={ev.id} style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  padding: '0.85rem 1rem', background: 'rgba(0,0,0,0.015)', borderRadius: '14px', cursor: 'pointer',
-                  transition: 'background 0.15s',
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
-                    <div style={{
-                      width: '42px', height: '42px', borderRadius: '12px',
-                      background: `${ev.color}12`, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontWeight: '800', fontSize: '0.72rem', color: ev.color,
-                    }}>{ev.initials}</div>
-                    <div>
-                      <div style={{ fontSize: '0.85rem', fontWeight: '600', color: '#1a1a2e' }}>{ev.instructor}</div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.68rem', color: '#94a3b8' }}>
-                        <Calendar size={12} /> {ev.date}
-                      </div>
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <span style={{
-                      padding: '0.2rem 0.65rem', borderRadius: '8px', fontSize: '0.68rem', fontWeight: '700',
-                      background: ev.level === 'B2' ? 'rgba(34,197,94,0.08)' : ev.level === 'B1+' ? 'rgba(59,130,246,0.08)' : 'rgba(249,115,22,0.08)',
-                      color: ev.level === 'B2' ? '#22c55e' : ev.level === 'B1+' ? '#3b82f6' : '#f97316',
-                    }}>{ev.level}</span>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.2rem' }}>
-                      <span style={{ fontSize: '1.15rem', fontWeight: '800', color: '#1a1a2e' }}>{ev.score}</span>
-                      <span style={{ fontSize: '0.68rem', color: '#94a3b8' }}>/100</span>
-                    </div>
-                    <span style={{
-                      padding: '0.2rem 0.6rem', borderRadius: '6px', fontSize: '0.62rem', fontWeight: '600',
-                      background: 'rgba(34,197,94,0.08)', color: '#22c55e',
-                    }}>{ev.status}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
         </main>
       </div>
     </div>

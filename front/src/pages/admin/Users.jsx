@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AdminSidebar from '../../components/AdminSidebar';
-import { Search, Plus, Edit2, Trash2, Filter, Power, PowerOff } from 'lucide-react';
+import { Search, Plus, Edit2, Trash2, Filter, Power, PowerOff, X, User, Mail, Lock } from 'lucide-react';
 import axios from 'axios';
 import styles from '../../styles/shared.module.css';
 import studentsStyles from '../teacher/Students.module.css';
@@ -16,6 +16,19 @@ const Users = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [togglingId, setTogglingId] = useState(null);
+  
+  // Add User Modal State
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newUser, setNewUser] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    role: 'student',
+    password: '',
+    isActive: true
+  });
+  const [addingUser, setAddingUser] = useState(false);
+  const [addError, setAddError] = useState('');
 
   // Check authentication on component mount
   useEffect(() => {
@@ -76,7 +89,6 @@ const Users = () => {
         name: `${user.firstName} ${user.lastName}`,
         email: user.email,
         role: user.role.charAt(0).toUpperCase() + user.role.slice(1),
-        level: user.role === 'student' ? 'B2' : '-',
         isActive: user.isActive,
         status: user.isActive ? 'Active' : 'Inactive',
         joined: user.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { 
@@ -211,13 +223,6 @@ const Users = () => {
     }
   };
 
-  // Edit user
-  const handleEditUser = (userId) => {
-    console.log('Edit user with ID:', userId);
-    // Implement edit modal here
-    alert('Edit functionality coming soon!');
-  };
-
   // Filter users based on search term and role filter
   const filteredUsers = users.filter(user => {
     const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -225,6 +230,74 @@ const Users = () => {
     const matchesRole = roleFilter === 'all' || user.role.toLowerCase() === roleFilter;
     return matchesSearch && matchesRole;
   });
+
+  // Generate a temporary password (8 characters)
+  const generatePassword = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+    let password = '';
+    for (let i = 0; i < 8; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return password;
+  };
+
+  // Handle Add User
+  const handleAddUser = async (e) => {
+    e.preventDefault();
+    setAddError('');
+
+    if (!newUser.firstName || !newUser.lastName || !newUser.email || !newUser.role) {
+      setAddError('All fields are required');
+      return;
+    }
+
+    // Generate password if not provided
+    const password = newUser.password || generatePassword();
+
+    setAddingUser(true);
+
+    try {
+      const token = localStorage.getItem('token');
+      
+      const response = await axios.post(`${API_URL}/users`, {
+        firstName: newUser.firstName,
+        lastName: newUser.lastName,
+        email: newUser.email,
+        role: newUser.role,
+        password: password,
+        isActive: newUser.isActive
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      console.log('Add user response:', response.data);
+      
+      // Reset form
+      setNewUser({
+        firstName: '',
+        lastName: '',
+        email: '',
+        role: 'student',
+        password: '',
+        isActive: true
+      });
+      
+      // Close modal and refresh list
+      setShowAddModal(false);
+      fetchUsers();
+      
+      alert(`User created successfully! Password: ${password}\n\nPlease share this password with the user.`);
+      
+    } catch (error) {
+      console.error('Error adding user:', error);
+      setAddError(error.response?.data?.message || error.message || 'Failed to create user');
+    } finally {
+      setAddingUser(false);
+    }
+  };
 
   // Get badge class based on role
   const getRoleBadgeClass = (role) => {
@@ -260,7 +333,10 @@ const Users = () => {
               <h1 className={styles.pageTitle}>User Management</h1>
               <p className={styles.pageSubtitle}>Manage all platform users</p>
             </div>
-            <button className={styles.primaryButton}>
+            <button 
+              className={styles.primaryButton}
+              onClick={() => setShowAddModal(true)}
+            >
               <Plus size={18} />
               Add User
             </button>
@@ -320,7 +396,6 @@ const Users = () => {
                 <option value="all">All Roles</option>
                 <option value="student">Students</option>
                 <option value="instructor">Instructors</option>
-                <option value="admin">Admins</option>
               </select>
             </div>
           </div>
@@ -333,7 +408,6 @@ const Users = () => {
                   <th>User</th>
                   <th>Email</th>
                   <th>Role</th>
-                  <th>Level</th>
                   <th>Status</th>
                   <th>Joined</th>
                   <th>Actions</th>
@@ -371,12 +445,6 @@ const Users = () => {
                           <span className={`${styles.badge} ${getRoleBadgeClass(user.role)}`}>
                             {user.role}
                           </span>
-                        </td>
-                        <td>
-                          {user.level !== '-' ? 
-                            <span className={`${styles.badge} ${styles.info}`}>{user.level}</span> : 
-                            '-'
-                          }
                         </td>
                         <td>
                           <span className={`${styles.badge} ${user.isActive ? styles.success : styles.warning}`}>
@@ -422,15 +490,6 @@ const Users = () => {
                               )}
                             </button>
 
-                            {/* Edit Button */}
-                            <button 
-                              className={studentsStyles.actionBtn} 
-                              title="Edit User"
-                              onClick={() => handleEditUser(user.id)}
-                              style={{ color: '#3b82f6' }}
-                            >
-                              <Edit2 size={16} />
-                            </button>
 
                             {/* Delete Button - Hidden for admin users */}
                             {user.role !== 'Admin' && (
@@ -449,7 +508,7 @@ const Users = () => {
                     ))
                 ) : (
                   <tr>
-                    <td colSpan="7" style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
+                    <td colSpan="6" style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
                       No users found
                     </td>
                   </tr>
@@ -459,6 +518,295 @@ const Users = () => {
           </div>
         </main>
       </div>
+
+      {/* Add User Modal */}
+      {showAddModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            padding: '2rem',
+            width: '90%',
+            maxWidth: '500px',
+            maxHeight: '90vh',
+            overflow: 'auto',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)'
+          }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '1.5rem'
+            }}>
+              <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '600' }}>Add New User</h2>
+              <button
+                onClick={() => {
+                  setShowAddModal(false);
+                  setAddError('');
+                  setNewUser({
+                    firstName: '',
+                    lastName: '',
+                    email: '',
+                    role: 'student',
+                    password: '',
+                    isActive: true
+                  });
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '0.5rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <X size={20} color="#64748b" />
+              </button>
+            </div>
+
+            {addError && (
+              <div style={{
+                backgroundColor: '#fef2f2',
+                border: '1px solid #fee2e2',
+                borderRadius: '8px',
+                padding: '0.75rem',
+                marginBottom: '1rem',
+                color: '#dc2626',
+                fontSize: '0.875rem'
+              }}>
+                {addError}
+              </div>
+            )}
+
+            <form onSubmit={handleAddUser}>
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{
+                  display: 'block',
+                  marginBottom: '0.5rem',
+                  fontSize: '0.875rem',
+                  fontWeight: '500',
+                  color: '#374151'
+                }}>
+                  First Name *
+                </label>
+                <input
+                  type="text"
+                  value={newUser.firstName}
+                  onChange={(e) => setNewUser({ ...newUser, firstName: e.target.value })}
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '8px',
+                    fontSize: '0.875rem'
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{
+                  display: 'block',
+                  marginBottom: '0.5rem',
+                  fontSize: '0.875rem',
+                  fontWeight: '500',
+                  color: '#374151'
+                }}>
+                  Last Name *
+                </label>
+                <input
+                  type="text"
+                  value={newUser.lastName}
+                  onChange={(e) => setNewUser({ ...newUser, lastName: e.target.value })}
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '8px',
+                    fontSize: '0.875rem'
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{
+                  display: 'block',
+                  marginBottom: '0.5rem',
+                  fontSize: '0.875rem',
+                  fontWeight: '500',
+                  color: '#374151'
+                }}>
+                  Email *
+                </label>
+                <input
+                  type="email"
+                  value={newUser.email}
+                  onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '8px',
+                    fontSize: '0.875rem'
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{
+                  display: 'block',
+                  marginBottom: '0.5rem',
+                  fontSize: '0.875rem',
+                  fontWeight: '500',
+                  color: '#374151'
+                }}>
+                  Role *
+                </label>
+                <select
+                  value={newUser.role}
+                  onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '8px',
+                    fontSize: '0.875rem',
+                    backgroundColor: 'white'
+                  }}
+                >
+                  <option value="student">Student</option>
+                  <option value="instructor">Instructor</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{
+                  display: 'block',
+                  marginBottom: '0.5rem',
+                  fontSize: '0.875rem',
+                  fontWeight: '500',
+                  color: '#374151'
+                }}>
+                  Password (leave empty to auto-generate)
+                </label>
+                <input
+                  type="text"
+                  value={newUser.password}
+                  onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                  placeholder="Auto-generate if empty"
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '8px',
+                    fontSize: '0.875rem'
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setNewUser({ ...newUser, password: generatePassword() })}
+                  style={{
+                    marginTop: '0.5rem',
+                    padding: '0.5rem 1rem',
+                    backgroundColor: '#f3f4f6',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '6px',
+                    fontSize: '0.75rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Generate Password
+                </button>
+              </div>
+
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  fontSize: '0.875rem',
+                  cursor: 'pointer'
+                }}>
+                  <input
+                    type="checkbox"
+                    checked={newUser.isActive}
+                    onChange={(e) => setNewUser({ ...newUser, isActive: e.target.checked })}
+                    style={{ cursor: 'pointer' }}
+                  />
+                  <span>Account Active</span>
+                </label>
+              </div>
+
+              <div style={{
+                display: 'flex',
+                gap: '0.75rem',
+                justifyContent: 'flex-end'
+              }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAddModal(false);
+                    setAddError('');
+                    setNewUser({
+                      firstName: '',
+                      lastName: '',
+                      email: '',
+                      role: 'student',
+                      password: '',
+                      isActive: true
+                    });
+                  }}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    backgroundColor: '#f3f4f6',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '0.875rem',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    color: '#374151'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={addingUser}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    backgroundColor: addingUser ? '#9ca3af' : '#E31837',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '0.875rem',
+                    fontWeight: '500',
+                    cursor: addingUser ? 'not-allowed' : 'pointer',
+                    color: 'white'
+                  }}
+                >
+                  {addingUser ? 'Creating...' : 'Create User'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

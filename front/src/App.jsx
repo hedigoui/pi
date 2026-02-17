@@ -1,12 +1,14 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Login from './pages/Login';
+import Signup from './pages/Signup';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 
 // Student Pages
 import StudentDashboard from './pages/student/Dashboard';
 import StudentPractice from './pages/student/Practice';
 import StudentReports from './pages/student/Reports';
 import StudentSettings from './pages/student/Settings';
-import Signup from './pages/Signup';
 // Teacher Pages
 import TeacherDashboard from './pages/teacher/Dashboard';
 import TeacherStudents from './pages/teacher/Students';
@@ -26,6 +28,8 @@ function App() {
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         {/* Student Routes */}
         <Route path="/student/dashboard" element={<StudentDashboard />} />
         <Route path="/student/practice" element={<StudentPractice />} />

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Mail, User, GraduationCap, Shield, Github, Mic } from 'lucide-react';
+import { Eye, EyeOff, Mail, User, GraduationCap, Mic, Github } from 'lucide-react';
 import styles from './Login.module.css';
 
 const Signup = () => {
@@ -16,76 +16,81 @@ const Signup = () => {
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
- const handleSubmit = async (e) => {
-  e.preventDefault();
-  setError('');
-  
-  // Validation
-  if (password !== confirmPassword) {
-    setError('Passwords do not match!');
-    return;
-  }
-
-  if (password.length < 6) {
-    setError('Password must be at least 6 characters');
-    return;
-  }
-
-  if (!agreeTerms) {
-    setError('Please agree to Terms & Conditions');
-    return;
-  }
-
-  setLoading(true);
-
-  try {
-    const response = await fetch('http://localhost:3000/users', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        email,
-        password,
-        firstName,
-        lastName,
-        role: selectedRole,
-        isActive: false, // Add this field
-      }),
-    });
-
-    const data = await response.json();
-
-    if (response.ok) {
-      alert('Account created successfully! Please sign in.');
-      navigate('/');
-    } else {
-      // Handle specific error messages from backend
-      if (response.status === 400) {
-        setError(data.message || 'Email already exists or invalid data');
-      } else {
-        setError(data.message || 'Failed to create account');
-      }
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    
+    if (password !== confirmPassword) {
+      setError('Passwords do not match!');
+      return;
     }
-  } catch (error) {
-    console.error('Signup error:', error);
-    setError('Cannot connect to server. Please check if backend is running on port 3000');
-  } finally {
-    setLoading(false);
-  }
-};
 
-  // Updated roles to match backend enum (student, instructor, admin)
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+
+    if (!agreeTerms) {
+      setError('Please agree to Terms & Conditions');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await fetch('http://localhost:3000/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          password,
+          firstName,
+          lastName,
+          role: selectedRole,
+          isActive: false,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert('Account created successfully! Please sign in.');
+        handleNavigateToLogin();
+      } else {
+        if (response.status === 400) {
+          setError(data.message || 'Email already exists or invalid data');
+        } else {
+          setError(data.message || 'Failed to create account');
+        }
+      }
+    } catch (error) {
+      console.error('Signup error:', error);
+      setError('Cannot connect to server. Please check if backend is running on port 3000');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleNavigateToLogin = (e) => {
+    if (e) e.preventDefault();
+    setIsTransitioning(true);
+    setTimeout(() => {
+      navigate('/');
+    }, 300);
+  };
+
   const roles = [
     { id: 'student', label: 'Student', icon: GraduationCap },
-    { id: 'instructor', label: 'Instructor', icon: User }, // Changed from 'teacher' to 'instructor'
-    { id: 'admin', label: 'Admin', icon: Shield },
+    { id: 'instructor', label: 'Instructor', icon: User },
   ];
 
   return (
     <div className={styles.container}>
-      {/* Left Branded Panel */}
+      {/* Left Branded Panel - Static (same as Login) */}
       <div className={styles.leftPanel}>
         <div className={styles.leftContent}>
           <div className={styles.brandLogo}>
@@ -136,22 +141,20 @@ const Signup = () => {
         <div className={styles.circle3} />
       </div>
 
-      {/* Right Form Panel */}
-      <div className={styles.rightPanel}>
+      {/* Right Form Panel - Animated */}
+      <div className={`${styles.rightPanel} ${isTransitioning ? styles.fadeOut : styles.fadeIn}`}>
         <div className={styles.formWrapper}>
           <div className={styles.formHeader}>
             <h2 className={styles.title}>Create Account</h2>
             <p className={styles.subtitle}>Please enter your details to sign up</p>
           </div>
 
-          {/* Error Message */}
           {error && (
             <div className={styles.errorMessage}>
               {error}
             </div>
           )}
 
-          {/* Role Selection */}
           <div className={styles.roleSelector}>
             {roles.map((role) => (
               <button
@@ -302,7 +305,7 @@ const Signup = () => {
             </div>
 
             <p className={styles.signupLink}>
-              Already have an account? <a href="#" onClick={(e) => { e.preventDefault(); navigate('/'); }}>Sign In</a>
+              Already have an account? <a href="#" onClick={handleNavigateToLogin}>Sign In</a>
             </p>
           </form>
         </div>

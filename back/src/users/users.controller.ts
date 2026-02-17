@@ -47,24 +47,7 @@ export class UsersController {
     return this.usersService.findAll();
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.usersService.findOne(id);
-  }
-
-  @Patch(':id')
-  update(
-    @Param('id') id: string,
-    @Body() body: any,
-  ) {
-    return this.usersService.update(id, body);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.usersService.remove(id);
-  }
-
+  // Specific routes must come BEFORE parameterized routes
   @Post('signin')
   @HttpCode(HttpStatus.OK)
   async signin(
@@ -84,5 +67,70 @@ export class UsersController {
       console.error('Signin error:', error);
       throw error;
     }
+  }
+
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  async forgotPassword(
+    @Body()
+    body: {
+      email: string;
+    },
+  ) {
+    try {
+      if (!body.email) {
+        throw new BadRequestException('Email is required');
+      }
+      
+      return await this.usersService.forgotPassword(body.email);
+    } catch (error) {
+      console.error('Forgot password error:', error);
+      throw error;
+    }
+  }
+
+  @Post('change-password')
+  @HttpCode(HttpStatus.OK)
+  async changePassword(
+    @Body()
+    body: {
+      userId: string;
+      currentPassword: string;
+      newPassword: string;
+    },
+  ) {
+    try {
+      if (!body.userId || !body.currentPassword || !body.newPassword) {
+        throw new BadRequestException('User ID, current password, and new password are required');
+      }
+      
+      return await this.usersService.changePassword(
+        body.userId,
+        body.currentPassword,
+        body.newPassword
+      );
+    } catch (error) {
+      console.error('Change password error:', error);
+      throw error;
+    }
+  }
+
+  // Parameterized routes come AFTER specific routes
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.usersService.findOne(id);
+  }
+
+  @Patch(':id')
+  update(
+    @Param('id') id: string,
+    @Body() body: any,
+  ) {
+    return this.usersService.update(id, body);
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.usersService.remove(id);
   }
 }

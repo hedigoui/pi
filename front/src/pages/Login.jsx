@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Mail, User, GraduationCap, Shield, Github, Mic } from 'lucide-react';
+import { Eye, EyeOff, Mail, User, GraduationCap, Mic, Github } from 'lucide-react';
 import styles from './Login.module.css';
 
 const Login = () => {
@@ -9,9 +9,9 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  const [selectedRole, setSelectedRole] = useState('student');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -31,37 +31,23 @@ const Login = () => {
       });
 
       const data = await response.json();
-      console.log('Full response:', {
-        status: response.status,
-        ok: response.ok,
-        data: data
-      });
 
       if (response.ok) {
-        // Log the user object structure
-        console.log('User object:', data.user);
-        console.log('User role value:', data.user?.role);
-        console.log('User role type:', typeof data.user?.role);
-        
-        // Check if user is active (double-check, though backend already does this)
         if (!data.user?.isActive) {
           setError('Your account has been deactivated. Please contact support.');
           setLoading(false);
           return;
         }
         
-        // Store the token and user data
         localStorage.setItem('token', data.access_token);
         localStorage.setItem('user', JSON.stringify(data.user));
         
-        // Store remember me preference if checked
         if (rememberMe) {
           localStorage.setItem('rememberMe', 'true');
         } else {
           localStorage.removeItem('rememberMe');
         }
 
-        // Get the user role
         const userRole = data.user?.role;
         
         if (!userRole) {
@@ -70,36 +56,20 @@ const Login = () => {
           return;
         }
 
-        // ...removed welcome back popup...
-        
-        // Navigate based on role with explicit mapping
-        console.log('Attempting to navigate based on role:', userRole);
-        
-        // Add a small delay to ensure state is updated
         setTimeout(() => {
           if (userRole === 'admin') {
-            console.log('Navigating to admin dashboard');
             navigate('/admin/dashboard');
           } else if (userRole === 'instructor') {
-            console.log('Navigating to teacher dashboard');
             navigate('/teacher/dashboard');
           } else if (userRole === 'student') {
-            console.log('Navigating to student dashboard');
             navigate('/student/dashboard');
           } else {
-            console.log('Unknown role:', userRole);
             setError(`Unknown user role: ${userRole}`);
           }
         }, 100);
         
       } else {
-        // Handle error messages from backend
-        console.log('Login failed with status:', response.status);
-        console.log('Error data:', data);
-        
-        // Check for specific error messages
         if (response.status === 401) {
-          // Check if it's an inactive account error
           if (data.message && data.message.includes('deactivated')) {
             setError('Your account has been deactivated. Please contact support.');
           } else {
@@ -119,16 +89,17 @@ const Login = () => {
     }
   };
 
-  // Roles for UI only - matches backend enum values
-  const roles = [
-    { id: 'student', label: 'Student', icon: GraduationCap },
-    { id: 'instructor', label: 'Instructor', icon: User },
-    { id: 'admin', label: 'Admin', icon: Shield },
-  ];
+  const handleNavigateToSignup = (e) => {
+    e.preventDefault();
+    setIsTransitioning(true);
+    setTimeout(() => {
+      navigate('/signup');
+    }, 300); // Match this with CSS transition duration
+  };
 
   return (
     <div className={styles.container}>
-      {/* Left Branded Panel */}
+      {/* Left Branded Panel - Static */}
       <div className={styles.leftPanel}>
         <div className={styles.leftContent}>
           <div className={styles.brandLogo}>
@@ -180,8 +151,8 @@ const Login = () => {
         <div className={styles.circle3} />
       </div>
 
-      {/* Right Form Panel */}
-      <div className={styles.rightPanel}>
+      {/* Right Form Panel - Animated */}
+      <div className={`${styles.rightPanel} ${isTransitioning ? styles.fadeOut : styles.fadeIn}`}>
         <div className={styles.formWrapper}>
           <div className={styles.formHeader}>
             <h2 className={styles.title}>Sign In</h2>
@@ -194,21 +165,6 @@ const Login = () => {
               {error}
             </div>
           )}
-
-          {/* Role Selection - UI only, actual role comes from backend */}
-          <div className={styles.roleSelector}>
-            {roles.map((role) => (
-              <button
-                key={role.id}
-                type="button"
-                className={`${styles.roleButton} ${selectedRole === role.id ? styles.activeRole : ''}`}
-                onClick={() => setSelectedRole(role.id)}
-              >
-                <role.icon size={16} />
-                <span>{role.label}</span>
-              </button>
-            ))}
-          </div>
 
           <form onSubmit={handleSubmit} className={styles.form}>
             <div className={styles.inputGroup}>
@@ -269,8 +225,10 @@ const Login = () => {
                 className={styles.forgotLink} 
                 onClick={(e) => {
                   e.preventDefault();
-                  // Handle forgot password - you can implement this later
-                  alert('Please contact support to reset your password');
+                  setIsTransitioning(true);
+                  setTimeout(() => {
+                    navigate('/forgot-password');
+                  }, 300);
                 }}
               >
                 Forgot Password?
@@ -318,7 +276,7 @@ const Login = () => {
             </div>
 
             <p className={styles.signupLink}>
-              Don&apos;t have an account? <a href="/signup">Create Account</a>
+              Don&apos;t have an account? <a href="#" onClick={handleNavigateToSignup}>Create Account</a>
             </p>
           </form>
         </div>
