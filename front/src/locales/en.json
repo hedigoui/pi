@@ -1,0 +1,46 @@
+{
+  "login": {
+    "title": "Sign In",
+    "subtitle": "Please enter your details to sign in",
+    "email": "Email",
+    "emailPlaceholder": "Enter your email",
+    "password": "Password",
+    "passwordPlaceholder": "Enter your password",
+    "rememberMe": "Remember Me",
+    "forgotPassword": "Forgot Password?",
+    "loginButton": "Login",
+    "orContinueWith": "or continue with",
+    "createAccount": "Create Account",
+    "noAccount": "Don't have an account?",
+    "welcome": "Welcome to",
+    "welcomeBreak": "EVALUA Platform",
+    "subtext": "AI-Powered Oral Performance Assessment",
+    "feature1": "AI-Powered Transcription & CEFR Analysis",
+    "feature2": "Real-time Practice with Instant Feedback",
+    "feature3": "Comprehensive Performance Analytics",
+    "tagline": "Efficiently assess and improve oral communication skills.",
+    "roles": {
+      "student": "Student",
+      "teacher": "Instructor",
+      "admin": "Admin"
+    }
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "practice": "Practice",
+    "myReports": "My Reports",
+    "reports": "Reports",
+    "settings": "Settings",
+    "students": "Students",
+    "evaluate": "Evaluate",
+    "users": "Users",
+    "logout": "Logout"
+  },
+  "accessibility": {
+    "readAloud": "Read aloud",
+    "language": "Language"
+  },
+  "footer": {
+    "copyright": "EVALUA © 2026"
+  }
+}

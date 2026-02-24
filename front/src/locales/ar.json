@@ -1,0 +1,46 @@
+{
+  "login": {
+    "title": "تسجيل الدخول",
+    "subtitle": "يرجى إدخال بياناتك لتسجيل الدخول",
+    "email": "البريد الإلكتروني",
+    "emailPlaceholder": "أدخل بريدك الإلكتروني",
+    "password": "كلمة المرور",
+    "passwordPlaceholder": "أدخل كلمة المرور",
+    "rememberMe": "تذكرني",
+    "forgotPassword": "نسيت كلمة المرور؟",
+    "loginButton": "دخول",
+    "orContinueWith": "أو تابع باستخدام",
+    "createAccount": "إنشاء حساب",
+    "noAccount": "ليس لديك حساب؟",
+    "welcome": "مرحباً بك في",
+    "welcomeBreak": "منصة إيفالوا",
+    "subtext": "تقييم الأداء الشفوي مدعوم بالذكاء الاصطناعي",
+    "feature1": "نسخ وتحليل CEFR مدعوم بالذكاء الاصطناعي",
+    "feature2": "تدريب فوري مع تغذية راجعة لحظية",
+    "feature3": "تحليلات شاملة للأداء",
+    "tagline": "قيّم وحسّن مهارات التواصل الشفوي بفعالية.",
+    "roles": {
+      "student": "طالب",
+      "teacher": "مدرّس",
+      "admin": "مدير"
+    }
+  },
+  "nav": {
+    "dashboard": "لوحة التحكم",
+    "practice": "التدريب",
+    "myReports": "تقاريري",
+    "reports": "التقارير",
+    "settings": "الإعدادات",
+    "students": "الطلاب",
+    "evaluate": "التقييم",
+    "users": "المستخدمون",
+    "logout": "تسجيل الخروج"
+  },
+  "accessibility": {
+    "readAloud": "اقرأ بصوت عالٍ",
+    "language": "اللغة"
+  },
+  "footer": {
+    "copyright": "إيفالوا © 2026"
+  }
+}

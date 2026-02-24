@@ -1,0 +1,46 @@
+{
+  "login": {
+    "title": "Connexion",
+    "subtitle": "Veuillez entrer vos informations pour vous connecter",
+    "email": "E-mail",
+    "emailPlaceholder": "Entrez votre e-mail",
+    "password": "Mot de passe",
+    "passwordPlaceholder": "Entrez votre mot de passe",
+    "rememberMe": "Se souvenir de moi",
+    "forgotPassword": "Mot de passe oublié ?",
+    "loginButton": "Connexion",
+    "orContinueWith": "ou continuer avec",
+    "createAccount": "Créer un compte",
+    "noAccount": "Vous n'avez pas de compte ?",
+    "welcome": "Bienvenue sur",
+    "welcomeBreak": "la plateforme EVALUA",
+    "subtext": "Évaluation orale par intelligence artificielle",
+    "feature1": "Transcription et analyse CECR par IA",
+    "feature2": "Pratique en temps réel avec retour instantané",
+    "feature3": "Analyses de performance détaillées",
+    "tagline": "Évaluez et améliorez vos compétences orales efficacement.",
+    "roles": {
+      "student": "Étudiant",
+      "teacher": "Enseignant",
+      "admin": "Administrateur"
+    }
+  },
+  "nav": {
+    "dashboard": "Tableau de bord",
+    "practice": "Pratique",
+    "myReports": "Mes rapports",
+    "reports": "Rapports",
+    "settings": "Paramètres",
+    "students": "Étudiants",
+    "evaluate": "Évaluer",
+    "users": "Utilisateurs",
+    "logout": "Déconnexion"
+  },
+  "accessibility": {
+    "readAloud": "Lire à voix haute",
+    "language": "Langue"
+  },
+  "footer": {
+    "copyright": "EVALUA © 2026"
+  }
+}
