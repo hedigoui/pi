@@ -107,12 +107,12 @@ const Login = () => {
               <Mic size={28} color="#fff" />
             </div>
             <span className={styles.logoText}>
-              <span className={styles.letterWhite}>E</span>
+              <span className={styles.letterLight}>E</span>
               <span className={styles.letterLight}>v</span>
-              <span className={styles.letterWhite}>a</span>
+              <span className={styles.letterLight}>a</span>
               <span className={styles.letterLight}>l</span>
               <span className={styles.letterWhite}>A</span>
-              <span className={styles.letterLight}>I</span>
+              <span className={styles.letterWhite}>I</span>
             </span>
           </div>
 

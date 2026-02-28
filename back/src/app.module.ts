@@ -2,9 +2,11 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
+import { PracticeSessionModule } from './practice-session/practice-session.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { Users } from './users/users.models';
+import { PracticeSession } from './practice-session/practice-session.models';
 
 @Module({
   imports: [
@@ -13,7 +15,7 @@ import { Users } from './users/users.models';
       host: 'localhost',
       port: 27017,
       database: 'evalAI',
-      entities: [Users],
+      entities: [Users, PracticeSession],
       synchronize: true, // À utiliser uniquement en développement
     }),
     JwtModule.register({
@@ -21,6 +23,7 @@ import { Users } from './users/users.models';
       signOptions: { expiresIn: '1d' },
     }),
     UsersModule,
+    PracticeSessionModule,
   ],
   controllers: [AppController],
   providers: [AppService],

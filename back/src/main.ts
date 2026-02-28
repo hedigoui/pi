@@ -1,6 +1,8 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import * as dotenv from 'dotenv';
+import { join } from 'path';
+import { NestExpressApplication } from '@nestjs/platform-express';
 
 // Load environment variables immediately
 dotenv.config();
@@ -10,9 +12,11 @@ console.log('📧 Email Configuration:');
 console.log('  - USER:', process.env.EMAIL_USER ? '✅ Set' : '❌ Not set');
 console.log('  - PASSWORD:', process.env.EMAIL_PASSWORD ? '✅ Set' : '❌ Not set');
 console.log('  - JWT_SECRET:', process.env.JWT_SECRET ? '✅ Set' : '❌ Not set');
+console.log('🤖 AI Analysis (Groq):');
+console.log('  - GROQ_API_KEY:', process.env.GROQ_API_KEY ? '✅ Set' : '❌ Not set');
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
   
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
   
@@ -21,6 +25,9 @@ async function bootstrap() {
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });
+
+  // Serve uploaded audio files at /uploads/audio/...
+  app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads' });
   
   await app.listen(3000);
   console.log(`✅ Application is running on: http://localhost:3000`);

@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import StudentSidebar from '../../components/StudentSidebar';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from 'recharts';
 import { TrendingUp, Award, Clock, Target, ChevronLeft, ChevronRight, Flame, Zap, ArrowUpRight, Star, Mic } from 'lucide-react';
+import { API_URL } from '../../config';
 import styles from '../../styles/shared.module.css';
+import dashStyles from './Dashboard.module.css';
 
 const images = [
   { src: '/images/s1.jpg', alt: 'Student 1' },
@@ -10,7 +13,7 @@ const images = [
   { src: '/images/eva.jpg', alt: 'Eva' },
 ];
 
-const progressData = [
+const defaultProgressData = [
   { name: 'Week 1', score: 65 },
   { name: 'Week 2', score: 70 },
   { name: 'Week 3', score: 68 },
@@ -19,7 +22,7 @@ const progressData = [
   { name: 'Week 6', score: 85 },
 ];
 
-const skillsData = [
+const defaultSkillsData = [
   { name: 'Fluency', score: 78, color: '#E31837' },
   { name: 'Pronunciation', score: 72, color: '#f97316' },
   { name: 'Speaking Pace', score: 85, color: '#22c55e' },
@@ -30,13 +33,9 @@ const skillsData = [
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
-      <div style={{
-        background: 'rgba(15,15,26,0.92)', backdropFilter: 'blur(16px)',
-        border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px',
-        padding: '0.6rem 0.85rem', boxShadow: '0 12px 40px rgba(0,0,0,0.3)',
-      }}>
-        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.7rem', marginBottom: '0.2rem' }}>{label}</p>
-        <p style={{ color: '#fff', fontSize: '0.9rem', fontWeight: '700' }}>{payload[0].value}</p>
+      <div className={dashStyles.tooltipWrap}>
+        <p className={dashStyles.tooltipLabel}>{label}</p>
+        <p className={dashStyles.tooltipValue}>{payload[0].value}</p>
       </div>
     );
   }
@@ -45,6 +44,9 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 const Dashboard = () => {
   const [currentImage, setCurrentImage] = useState(0);
+  const [user, setUser] = useState(null);
+  const [sessions, setSessions] = useState([]);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -52,6 +54,70 @@ const Dashboard = () => {
     }, 4000);
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        setUser(JSON.parse(userStr));
+      } catch (e) {
+        console.error('Parse user error', e);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const fetchSessions = async () => {
+      if (!user?.id) return;
+      setError('');
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_URL}/practice-sessions/student/${user.id}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (!res.ok) throw new Error('Failed to load dashboard data');
+        const data = await res.json();
+        setSessions(Array.isArray(data) ? data : []);
+      } catch (e) {
+        setError(e.message || 'Could not load dashboard data');
+        setSessions([]);
+      }
+    };
+    fetchSessions();
+  }, [user?.id]);
+
+  const latest = sessions[0] || null;
+  const latestScore = latest?.totalScore ?? null;
+  const latestCefr = latest?.cefrLevel ?? null;
+
+  const scoredSessions = sessions.filter((s) => s.totalScore != null);
+  const sessionsCompleted = sessions.length;
+  const bestScore =
+    scoredSessions.length > 0
+      ? scoredSessions.reduce((max, s) => (s.totalScore > max ? s.totalScore : max), scoredSessions[0].totalScore)
+      : null;
+
+  const progressData =
+    scoredSessions.length > 0
+      ? scoredSessions
+          .slice()
+          .reverse()
+          .map((s, idx) => ({
+            name: `S${scoredSessions.length - idx}`,
+            score: s.totalScore,
+          }))
+      : defaultProgressData;
+
+  const skillsData =
+    latest && latest.totalScore != null
+      ? [
+          { name: 'Fluency', score: latest.fluencyScore ?? 0, color: '#E31837' },
+          { name: 'Pronunciation', score: latest.pronunciationScore ?? 0, color: '#f97316' },
+          { name: 'Speaking Pace', score: latest.paceScore ?? 0, color: '#22c55e' },
+          { name: 'Confidence', score: latest.confidenceScore ?? 0, color: '#3b82f6' },
+          { name: 'Content Structure', score: latest.contentStructureScore ?? 0, color: '#8b5cf6' },
+        ]
+      : defaultSkillsData;
 
   const nextImage = () => setCurrentImage((prev) => (prev + 1) % images.length);
   const prevImage = () => setCurrentImage((prev) => (prev - 1 + images.length) % images.length);
@@ -62,135 +128,102 @@ const Dashboard = () => {
       <div className={styles.mainContent}>
         <main className={styles.content}>
           {/* Greeting */}
-          <div style={{ marginBottom: '1.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.15rem' }}>
-              <span style={{ fontSize: '0.72rem', fontWeight: '600', color: '#E31837', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Dashboard</span>
-              <span style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#22c55e', display: 'inline-block' }} />
-              <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Online</span>
+          <div className={dashStyles.greeting}>
+            <div className={dashStyles.greetingLabel}>
+              <span className={dashStyles.greetingPill}>Dashboard</span>
+              <span className={dashStyles.greetingDot} />
+              <span className={dashStyles.greetingStatus}>Online</span>
             </div>
-            {/* Removed 'Welcome back' greeting */}
-            <p style={{ color: '#94a3b8', fontSize: '0.85rem', marginTop: '0.3rem' }}>Here's how your oral skills are evolving</p>
+            <p className={dashStyles.greetingSub}>Here's how your oral skills are evolving</p>
           </div>
 
           {/* Hero Carousel */}
-          <div style={{
-            position: 'relative', width: '100%', height: '280px', borderRadius: '24px',
-            overflow: 'hidden', marginBottom: '1.5rem', boxShadow: '0 8px 40px rgba(0,0,0,0.1)',
-          }}>
+          <div className={dashStyles.hero}>
             {images.map((image, index) => (
-              <div key={index} style={{
-                position: 'absolute', inset: 0,
-                opacity: currentImage === index ? 1 : 0,
-                transform: `scale(${currentImage === index ? 1 : 1.06})`,
-                transition: 'opacity 0.8s ease, transform 1s ease',
-              }}>
-                <img src={image.src} alt={image.alt} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,0) 40%, rgba(15,15,26,0.7) 100%)' }} />
+              <div key={index} className={`${dashStyles.heroSlide} ${currentImage === index ? dashStyles.active : ''}`}>
+                <img src={image.src} alt={image.alt} className={dashStyles.heroImg} />
+                <div className={dashStyles.heroOverlay} />
               </div>
             ))}
-            <div style={{ position: 'absolute', bottom: '1.2rem', left: '1.5rem', right: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', zIndex: 10 }}>
+            <div className={dashStyles.heroContent}>
               <div>
-                <span style={{ display: 'inline-block', padding: '0.25rem 0.65rem', background: 'rgba(227,24,55,0.85)', borderRadius: '6px', fontSize: '0.65rem', fontWeight: '700', color: '#fff', marginBottom: '0.4rem', letterSpacing: '0.05em' }}>EvalAI</span>
-                <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.82rem', fontWeight: '500' }}>Speak. Practice. Excel.</p>
+                <span className={dashStyles.heroBadge}>EvalAI</span>
+                <p className={dashStyles.heroTagline}>Speak. Practice. Excel.</p>
               </div>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button onClick={prevImage} style={{ width: '32px', height: '32px', borderRadius: '10px', background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#fff' }}>
-                  <ChevronLeft size={15} />
+              <div className={dashStyles.heroNav}>
+                <button type="button" className={dashStyles.heroNavBtn} onClick={prevImage} aria-label="Previous">
+                  <ChevronLeft size={16} />
                 </button>
-                <button onClick={nextImage} style={{ width: '32px', height: '32px', borderRadius: '10px', background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#fff' }}>
-                  <ChevronRight size={15} />
+                <button type="button" className={dashStyles.heroNavBtn} onClick={nextImage} aria-label="Next">
+                  <ChevronRight size={16} />
                 </button>
               </div>
             </div>
-            <div style={{ position: 'absolute', bottom: '1.2rem', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: '0.3rem', zIndex: 10 }}>
+            <div className={dashStyles.heroDots}>
               {images.map((_, index) => (
-                <button key={index} onClick={() => setCurrentImage(index)} style={{
-                  width: currentImage === index ? '18px' : '6px', height: '6px', borderRadius: '3px',
-                  background: currentImage === index ? '#fff' : 'rgba(255,255,255,0.35)',
-                  border: 'none', cursor: 'pointer', transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-                }} />
+                <button key={index} type="button" className={`${dashStyles.heroDot} ${currentImage === index ? dashStyles.active : ''}`} onClick={() => setCurrentImage(index)} aria-label={`Slide ${index + 1}`} />
               ))}
             </div>
           </div>
 
+          {error && <div className={dashStyles.errorBanner}>{error}</div>}
+
           {/* Bento Stat Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
-            {/* CEFR Level - Accent Card */}
-            <div style={{
-              background: 'linear-gradient(135deg, #E31837, #B71C1C)', borderRadius: '20px',
-              padding: '1.25rem', position: 'relative', overflow: 'hidden', color: '#fff',
-            }}>
-              <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />
-              <div style={{ position: 'absolute', bottom: '-10px', right: '20px', width: '50px', height: '50px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)' }} />
-              <Target size={20} style={{ opacity: 0.7, marginBottom: '0.75rem' }} />
-              <div style={{ fontSize: '2.2rem', fontWeight: '800', letterSpacing: '-0.04em', lineHeight: '1' }}>B2</div>
-              <div style={{ fontSize: '0.72rem', opacity: 0.75, marginTop: '0.2rem', fontWeight: '500' }}>CEFR Level</div>
+          <div className={dashStyles.statGrid}>
+            <div className={`${dashStyles.statCard} ${dashStyles.statCardCefr}`}>
+              <Target size={20} className={dashStyles.statIcon} />
+              <div className={dashStyles.statValue}>{latestCefr || '--'}</div>
+              <div className={dashStyles.statLabel}>CEFR Level</div>
             </div>
 
-            {/* Progress */}
-            <div style={{
-              background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(0,0,0,0.06)', borderRadius: '20px', padding: '1.25rem',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-                <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(34,197,94,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#22c55e' }}>
+            <div className={`${dashStyles.statCard} ${dashStyles.statCardWhite}`}>
+              <div className={dashStyles.statCardHeader}>
+                <div className={`${dashStyles.statIcon} ${dashStyles.statIconGreen}`}>
                   <TrendingUp size={18} />
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', fontSize: '0.68rem', fontWeight: '700', color: '#22c55e', background: 'rgba(34,197,94,0.08)', padding: '0.2rem 0.5rem', borderRadius: '6px' }}>
+                <span className={dashStyles.statBadge}>
                   <ArrowUpRight size={12} /> +12%
-                </div>
+                </span>
               </div>
-              <div style={{ fontSize: '1.85rem', fontWeight: '800', color: '#1a1a2e', letterSpacing: '-0.04em', lineHeight: '1' }}>78%</div>
-              <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '0.2rem', fontWeight: '500' }}>Overall Progress</div>
+              <div className={dashStyles.statValue}>78%</div>
+              <div className={dashStyles.statLabel}>Overall Progress</div>
             </div>
 
-            {/* Sessions */}
-            <div style={{
-              background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(0,0,0,0.06)', borderRadius: '20px', padding: '1.25rem',
-            }}>
-              <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(59,130,246,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3b82f6', marginBottom: '0.75rem' }}>
+            <div className={`${dashStyles.statCard} ${dashStyles.statCardWhite}`}>
+              <div className={`${dashStyles.statIcon} ${dashStyles.statIconBlue}`}>
                 <Clock size={18} />
               </div>
-              <div style={{ fontSize: '1.85rem', fontWeight: '800', color: '#1a1a2e', letterSpacing: '-0.04em', lineHeight: '1' }}>12</div>
-              <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '0.2rem', fontWeight: '500' }}>Sessions Completed</div>
+              <div className={dashStyles.statValue}>{sessionsCompleted}</div>
+              <div className={dashStyles.statLabel}>Sessions Completed</div>
             </div>
 
-            {/* Best Score */}
-            <div style={{
-              background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(0,0,0,0.06)', borderRadius: '20px', padding: '1.25rem',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-                <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(249,115,22,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f97316' }}>
+            <div className={`${dashStyles.statCard} ${dashStyles.statCardWhite}`}>
+              <div className={dashStyles.statCardHeader}>
+                <div className={`${dashStyles.statIcon} ${dashStyles.statIconOrange}`}>
                   <Award size={18} />
                 </div>
-                <Star size={14} style={{ color: '#f97316' }} />
+                <Star size={14} style={{ color: 'var(--orange)' }} />
               </div>
-              <div style={{ fontSize: '1.85rem', fontWeight: '800', color: '#1a1a2e', letterSpacing: '-0.04em', lineHeight: '1' }}>85</div>
-              <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '0.2rem', fontWeight: '500' }}>Best Score</div>
+              <div className={dashStyles.statValue}>{bestScore != null ? bestScore : '--'}</div>
+              <div className={dashStyles.statLabel}>Best Score</div>
             </div>
           </div>
 
           {/* Charts Row */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '1rem', marginBottom: '1.5rem' }}>
-            {/* Progress Chart */}
-            <div style={{
-              background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(0,0,0,0.06)', borderRadius: '20px', padding: '1.5rem',
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+          <div className={dashStyles.chartsRow}>
+            <div className={dashStyles.chartCard}>
+              <div className={dashStyles.chartHeader}>
                 <div>
-                  <h3 style={{ fontSize: '0.95rem', fontWeight: '700', color: '#1a1a2e', letterSpacing: '-0.01em' }}>Progress Over Time</h3>
-                  <p style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '0.15rem' }}>Weekly score evolution</p>
+                  <h3 className={dashStyles.chartTitle}>Progress Over Time</h3>
+                  <p className={dashStyles.chartSub}>Score evolution</p>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.72rem', fontWeight: '600', color: '#22c55e' }}>
+                <span className={dashStyles.chartBadge}>
                   <Flame size={14} /> +30% growth
-                </div>
+                </span>
               </div>
               <ResponsiveContainer width="100%" height={180}>
                 <LineChart data={progressData}>
-                  <CartesianGrid stroke="rgba(0,0,0,0.04)" strokeDasharray="4 4" vertical={false} />
+                  <CartesianGrid stroke="rgba(0,0,0,0.05)" strokeDasharray="4 4" vertical={false} />
                   <XAxis dataKey="name" stroke="#cbd5e1" fontSize={11} tickLine={false} axisLine={false} />
                   <YAxis stroke="#cbd5e1" fontSize={11} tickLine={false} axisLine={false} domain={[60, 90]} />
                   <Tooltip content={<CustomTooltip />} />
@@ -202,21 +235,17 @@ const Dashboard = () => {
               </ResponsiveContainer>
             </div>
 
-            {/* Skills Breakdown */}
-            <div style={{
-              background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(0,0,0,0.06)', borderRadius: '20px', padding: '1.5rem',
-            }}>
-              <h3 style={{ fontSize: '0.95rem', fontWeight: '700', color: '#1a1a2e', marginBottom: '1.2rem', letterSpacing: '-0.01em' }}>Skills Breakdown</h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <div className={dashStyles.chartCard}>
+              <h3 className={dashStyles.chartTitle} style={{ marginBottom: '1.2rem' }}>Skills Breakdown</h3>
+              <div className={dashStyles.skillsList}>
                 {skillsData.map((skill) => (
                   <div key={skill.name}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
-                      <span style={{ fontSize: '0.75rem', fontWeight: '500', color: '#64748b' }}>{skill.name}</span>
-                      <span style={{ fontSize: '0.75rem', fontWeight: '700', color: skill.color }}>{skill.score}%</span>
+                    <div className={dashStyles.skillRow}>
+                      <span className={dashStyles.skillName}>{skill.name}</span>
+                      <span className={dashStyles.skillValue} style={{ color: skill.color }}>{skill.score}%</span>
                     </div>
-                    <div style={{ height: '6px', background: 'rgba(0,0,0,0.04)', borderRadius: '3px', overflow: 'hidden' }}>
-                      <div style={{ height: '100%', width: `${skill.score}%`, background: `linear-gradient(90deg, ${skill.color}, ${skill.color}cc)`, borderRadius: '3px', transition: 'width 1s cubic-bezier(0.4, 0, 0.2, 1)' }} />
+                    <div className={dashStyles.skillBar}>
+                      <div className={dashStyles.skillFill} style={{ width: `${skill.score}%`, background: `linear-gradient(90deg, ${skill.color}, ${skill.color}cc)` }} />
                     </div>
                   </div>
                 ))}
@@ -224,100 +253,56 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Bottom Row */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-            {/* Recent Evaluations */}
-            <div style={{
-              background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(0,0,0,0.06)', borderRadius: '20px', padding: '1.5rem',
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                <h3 style={{ fontSize: '0.95rem', fontWeight: '700', color: '#1a1a2e' }}>Recent Evaluations</h3>
-                <span style={{ fontSize: '0.68rem', fontWeight: '600', color: '#E31837', cursor: 'pointer' }}>View all →</span>
+          {/* AI Recommendations */}
+          <div className={dashStyles.bottomRow}>
+            <div className={dashStyles.recommendCard}>
+              <div className={dashStyles.recommendHeader}>
+                <Zap size={18} style={{ color: 'var(--primary)' }} />
+                <h3 className={dashStyles.recommendTitle}>AI Recommendations</h3>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-                {[
-                  { date: 'Feb 1', instructor: 'Dr. Smith', score: 85, level: 'B2', levelColor: '#22c55e' },
-                  { date: 'Jan 28', instructor: 'Prof. Johnson', score: 78, level: 'B1+', levelColor: '#3b82f6' },
-                  { date: 'Jan 20', instructor: 'Dr. Smith', score: 72, level: 'B1', levelColor: '#f97316' },
-                ].map((ev, i) => (
-                  <div key={i} style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    padding: '0.7rem 0.85rem', background: 'rgba(0,0,0,0.015)', borderRadius: '14px', cursor: 'pointer',
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                      <div style={{
-                        width: '36px', height: '36px', borderRadius: '10px',
-                        background: `${ev.levelColor}12`, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontWeight: '800', fontSize: '0.7rem', color: ev.levelColor,
-                      }}>{ev.level}</div>
+              <div className={dashStyles.recommendList}>
+                {(latest?.improvementSuggestions
+                  ? (typeof latest.improvementSuggestions === 'string'
+                      ? latest.improvementSuggestions.split(/\n/).filter(Boolean)
+                      : []
+                    ).map((text, i) => (
+                      <div key={i} className={dashStyles.recommendItem}>
+                        <span className={dashStyles.recommendIcon}>🎯</span>
+                        <p className={dashStyles.recommendText}>{text}</p>
+                      </div>
+                    ))
+                  : [
+                    { icon: '💪', title: 'Strength: Vocabulary', desc: 'Excellent usage. Keep expanding with advanced terms.', type: 'green' },
+                    { icon: '🎯', title: 'Improve: Pronunciation', desc: 'Focus on word stress patterns and intonation.', type: 'orange' },
+                    { icon: '🚀', title: 'Next Goal: B2+', desc: "You're close! Focus on fluency in complex topics.", type: 'red' },
+                  ].map((rec, i) => (
+                    <div key={i} className={`${dashStyles.recommendItemPlaceholder} ${dashStyles['placeholder' + rec.type.charAt(0).toUpperCase() + rec.type.slice(1)]}`}>
+                      <span className={dashStyles.recommendIcon}>{rec.icon}</span>
                       <div>
-                        <div style={{ fontSize: '0.82rem', fontWeight: '600', color: '#1a1a2e' }}>{ev.instructor}</div>
-                        <div style={{ fontSize: '0.68rem', color: '#94a3b8' }}>{ev.date}, 2026</div>
+                        <h4 className={dashStyles.recommendItemTitle} style={{ color: rec.type === 'green' ? 'var(--green)' : rec.type === 'orange' ? 'var(--orange)' : 'var(--primary)' }}>{rec.title}</h4>
+                        <p className={dashStyles.recommendText}>{rec.desc}</p>
                       </div>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      <span style={{ fontSize: '1rem', fontWeight: '800', color: '#1a1a2e' }}>{ev.score}</span>
-                      <span style={{ fontSize: '0.68rem', color: '#94a3b8' }}>/100</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* AI Recommendations */}
-            <div style={{
-              background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(0,0,0,0.06)', borderRadius: '20px', padding: '1.5rem',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-                <Zap size={16} style={{ color: '#E31837' }} />
-                <h3 style={{ fontSize: '0.95rem', fontWeight: '700', color: '#1a1a2e' }}>AI Recommendations</h3>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-                {[
-                  { icon: '💪', title: 'Strength: Vocabulary', desc: 'Excellent usage. Keep expanding with advanced terms.', bg: 'rgba(34,197,94,0.06)', accent: '#22c55e' },
-                  { icon: '🎯', title: 'Improve: Pronunciation', desc: 'Focus on word stress patterns and intonation.', bg: 'rgba(249,115,22,0.06)', accent: '#f97316' },
-                  { icon: '🚀', title: 'Next Goal: B2+', desc: "You're close! Focus on fluency in complex topics.", bg: 'rgba(227,24,55,0.04)', accent: '#E31837' },
-                ].map((rec, i) => (
-                  <div key={i} style={{
-                    display: 'flex', gap: '0.85rem', alignItems: 'flex-start',
-                    padding: '0.85rem', background: rec.bg, borderRadius: '14px', borderLeft: `3px solid ${rec.accent}`,
-                  }}>
-                    <span style={{ fontSize: '1.2rem', flexShrink: 0 }}>{rec.icon}</span>
-                    <div>
-                      <h4 style={{ fontSize: '0.78rem', fontWeight: '700', color: rec.accent, marginBottom: '0.15rem' }}>{rec.title}</h4>
-                      <p style={{ fontSize: '0.72rem', color: '#64748b', lineHeight: '1.5' }}>{rec.desc}</p>
-                    </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
           </div>
 
-          {/* Quick Action Bar */}
-          <div style={{
-            marginTop: '1.5rem', background: 'linear-gradient(135deg, #0f0f1a, #1a1a2e)',
-            borderRadius: '20px', padding: '1.25rem 1.5rem',
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(227,24,55,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Mic size={18} style={{ color: '#E31837' }} />
+          {/* Quick Action */}
+          <div className={dashStyles.quickAction}>
+            <div className={dashStyles.quickActionLeft}>
+              <div className={dashStyles.quickActionIcon}>
+                <Mic size={20} />
               </div>
               <div>
-                <p style={{ color: '#fff', fontSize: '0.88rem', fontWeight: '600' }}>Ready to practice?</p>
-                <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.72rem' }}>Start a new recording session and get instant AI feedback</p>
+                <p className={dashStyles.quickActionTitle}>Ready to practice?</p>
+                <p className={dashStyles.quickActionSub}>Start a new recording session and get instant AI feedback</p>
               </div>
             </div>
-            <button style={{
-              padding: '0.6rem 1.4rem', background: 'linear-gradient(135deg, #E31837, #B71C1C)',
-              border: 'none', borderRadius: '12px', color: '#fff', fontWeight: '700', fontSize: '0.82rem',
-              cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem',
-              boxShadow: '0 4px 20px rgba(227,24,55,0.3)', fontFamily: 'inherit',
-            }}>
-              Start Practice <ArrowUpRight size={15} />
-            </button>
+            <Link to="/student/practice" className={dashStyles.quickActionBtn}>
+              Start Practice <ArrowUpRight size={16} />
+            </Link>
           </div>
         </main>
       </div>

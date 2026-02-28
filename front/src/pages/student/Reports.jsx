@@ -1,29 +1,9 @@
+import { useEffect, useState } from 'react';
 import StudentSidebar from '../../components/StudentSidebar';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { Download, Calendar, TrendingUp, Award, Target, ArrowUpRight, FileText } from 'lucide-react';
+import { API_URL } from '../../config';
 import styles from '../../styles/shared.module.css';
-
-const radarData = [
-  { subject: 'Fluency', A: 85 },
-  { subject: 'Pronunciation', A: 72 },
-  { subject: 'Speaking Pace', A: 90 },
-  { subject: 'Confidence', A: 80 },
-  { subject: 'Content Structure', A: 78 },
-];
-
-const historyData = [
-  { date: 'Jan 10', score: 69 },
-  { date: 'Jan 17', score: 73 },
-  { date: 'Jan 24', score: 76 },
-  { date: 'Jan 31', score: 79 },
-  { date: 'Feb 7', score: 83 },
-];
-
-const evaluations = [
-  { id: 1, date: 'Feb 1, 2026', instructor: 'Hedi Goui', score: 86, level: 'B2', status: 'Completed', initials: 'HG', color: '#E31837' },
-  { id: 2, date: 'Jan 28, 2026', instructor: 'Aziz Azizi', score: 79, level: 'B1+', status: 'Completed', initials: 'AA', color: '#3b82f6' },
-  { id: 3, date: 'Jan 20, 2026', instructor: 'Ahmed Fatnassi', score: 74, level: 'B1', status: 'Completed', initials: 'AF', color: '#8b5cf6' },
-];
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
@@ -42,6 +22,83 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 const Reports = () => {
+  const [user, setUser] = useState(null);
+  const [sessions, setSessions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        setUser(JSON.parse(userStr));
+      } catch (e) {
+        console.error('Parse user error', e);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const fetchSessions = async () => {
+      if (!user?.id) return;
+      setLoading(true);
+      setError('');
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_URL}/practice-sessions/student/${user.id}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (!res.ok) throw new Error('Failed to load reports');
+        const data = await res.json();
+        setSessions(Array.isArray(data) ? data : []);
+      } catch (e) {
+        setError(e.message || 'Could not load reports');
+        setSessions([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchSessions();
+  }, [user?.id]);
+
+  const latest = sessions[0] || null;
+  const latestScore = latest?.totalScore ?? null;
+  const latestCefr = latest?.cefrLevel ?? null;
+
+  const scoredSessions = sessions.filter((s) => s.totalScore != null);
+  const historyData = scoredSessions.slice().reverse().map((s) => ({
+    date: new Date(s.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+    score: s.totalScore,
+  }));
+
+  const radarData = [
+    { subject: 'Fluency', A: latest?.fluencyScore ?? 0 },
+    { subject: 'Pronunciation', A: latest?.pronunciationScore ?? 0 },
+    { subject: 'Speaking Pace', A: latest?.paceScore ?? 0 },
+    { subject: 'Confidence', A: latest?.confidenceScore ?? 0 },
+    { subject: 'Content Structure', A: latest?.contentStructureScore ?? 0 },
+  ];
+
+  const improvement =
+    scoredSessions.length >= 2 && scoredSessions[0].totalScore
+      ? Math.round(
+          ((scoredSessions[scoredSessions.length - 1].totalScore - scoredSessions[0].totalScore) /
+            scoredSessions[0].totalScore) *
+            100,
+        )
+      : 0;
+
+  const evaluations = scoredSessions.slice(0, 3).map((s, index) => ({
+    id: index + 1,
+    date: new Date(s.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }),
+    instructor: 'AI Evaluation',
+    score: s.totalScore,
+    level: s.cefrLevel || '--',
+    status: 'Completed',
+    initials: (s.cefrLevel || '--').substring(0, 2),
+    color: '#E31837',
+  }));
+
   return (
     <div className={styles.layout}>
       <StudentSidebar />
@@ -67,6 +124,12 @@ const Reports = () => {
             </button>
           </div>
 
+          {error && (
+            <div style={{ padding: '0.75rem 1rem', background: 'rgba(239,68,68,0.08)', borderRadius: '10px', marginBottom: '1rem', color: '#b91c1c', fontSize: '0.8rem' }}>
+              {error}
+            </div>
+          )}
+
           {/* Summary Bento */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
             {/* Latest Score */}
@@ -76,7 +139,9 @@ const Reports = () => {
             }}>
               <div style={{ position: 'absolute', top: '-15px', right: '-15px', width: '70px', height: '70px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />
               <Award size={20} style={{ opacity: 0.7, marginBottom: '0.5rem' }} />
-              <div style={{ fontSize: '2.8rem', fontWeight: '900', letterSpacing: '-0.04em', lineHeight: '1' }}>86</div>
+              <div style={{ fontSize: '2.8rem', fontWeight: '900', letterSpacing: '-0.04em', lineHeight: '1' }}>
+                {latestScore != null ? latestScore : '--'}
+              </div>
               <div style={{ fontSize: '0.72rem', opacity: 0.8, marginTop: '0.25rem', fontWeight: '500' }}>Latest Score</div>
             </div>
 
@@ -87,7 +152,9 @@ const Reports = () => {
             }}>
               <div style={{ position: 'absolute', bottom: '-10px', left: '15px', width: '55px', height: '55px', borderRadius: '50%', background: 'rgba(255,255,255,0.07)' }} />
               <Target size={20} style={{ opacity: 0.7, marginBottom: '0.5rem' }} />
-              <div style={{ fontSize: '2.8rem', fontWeight: '900', letterSpacing: '-0.04em', lineHeight: '1' }}>B2</div>
+              <div style={{ fontSize: '2.8rem', fontWeight: '900', letterSpacing: '-0.04em', lineHeight: '1' }}>
+                {latestCefr || '--'}
+              </div>
               <div style={{ fontSize: '0.72rem', opacity: 0.8, marginTop: '0.25rem', fontWeight: '500' }}>CEFR Level</div>
             </div>
 
@@ -101,7 +168,9 @@ const Reports = () => {
                   <TrendingUp size={18} />
                 </div>
               </div>
-              <div style={{ fontSize: '2.8rem', fontWeight: '900', color: '#3b82f6', letterSpacing: '-0.04em', lineHeight: '1' }}>+17%</div>
+              <div style={{ fontSize: '2.8rem', fontWeight: '900', color: '#3b82f6', letterSpacing: '-0.04em', lineHeight: '1' }}>
+                {improvement > 0 ? `+${improvement}%` : '0%'}
+              </div>
               <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '0.25rem', fontWeight: '500' }}>Since First Session</div>
             </div>
           </div>
