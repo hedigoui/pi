@@ -253,7 +253,7 @@ const Login = () => {
               <button 
                 type="button" 
                 className={styles.socialButton}
-                onClick={() => alert('GitHub login coming soon!')}
+                onClick={() => window.open('http://localhost:3000/auth/github', '_self')}
                 disabled={loading}
               >
                 <Github size={20} />
@@ -262,7 +262,7 @@ const Login = () => {
               <button 
                 type="button" 
                 className={`${styles.socialButton} ${styles.googleButton}`}
-                onClick={() => alert('Google login coming soon!')}
+                onClick={() => window.open('http://localhost:3000/auth/google', '_self')}
                 disabled={loading}
               >
                 <svg width="20" height="20" viewBox="0 0 24 24">
