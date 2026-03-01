@@ -9,9 +9,13 @@ import {
   HttpCode,
   HttpStatus,
   BadRequestException,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { UsersService } from './users.service';
 import { UserRole } from './users.models';
+import type { Multer } from 'multer';
 
 @Controller('users')
 export class UsersController {
@@ -113,6 +117,35 @@ export class UsersController {
       console.error('Change password error:', error);
       throw error;
     }
+  }
+
+  @Get('profile/:id')
+  getProfile(@Param('id') id: string) {
+    return this.usersService.getProfile(id);
+  }
+
+  @Patch('profile/:id')
+  updateProfile(
+    @Param('id') id: string,
+    @Body() body: {
+      firstName?: string;
+      lastName?: string;
+      email?: string;
+      phone?: string;
+      bio?: string;
+      avatar?: string;
+    },
+  ) {
+    return this.usersService.updateProfile(id, body);
+  }
+
+  @Post('profile/:id/avatar')
+  @UseInterceptors(FileInterceptor('avatar'))
+  uploadAvatar(
+    @Param('id') id: string,
+    @UploadedFile() file: Multer.File,
+  ) {
+    return this.usersService.uploadAvatar(id, file);
   }
 
   // Parameterized routes come AFTER specific routes

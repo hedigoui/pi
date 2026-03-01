@@ -13,6 +13,7 @@ import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { Users, UserRole } from './users.models';
 import { EmailService } from '../email/email.service';
+import type { Multer } from 'multer';
 
 @Injectable()
 export class UsersService {
@@ -306,6 +307,108 @@ export class UsersService {
       return { message: 'Password has been changed successfully.' };
     } catch (error) {
       console.error('❌ Error in changePassword method:', error);
+      throw error;
+    }
+  }
+
+  async uploadAvatar(id: string, file: Multer.File): Promise<any> {
+    try {
+      if (!file) {
+        throw new BadRequestException('No file uploaded');
+      }
+
+      // Validate file type
+      const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+      if (!allowedMimeTypes.includes(file.mimetype)) {
+        throw new BadRequestException('Invalid file type. Only JPEG, PNG, GIF, and WebP are allowed.');
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        throw new BadRequestException('File too large. Maximum size is 5MB.');
+      }
+
+      // For now, we'll store the file info as base64
+      // In production, you'd want to upload to cloud storage
+      const avatarData = {
+        filename: file.originalname,
+        mimetype: file.mimetype,
+        size: file.size,
+        data: file.buffer.toString('base64'),
+      };
+
+      const user = await this.userRepository.findOneBy({ _id: new ObjectId(id) });
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      user.avatar = `data:${file.mimetype};base64,${avatarData.data}`;
+      user.updatedAt = new Date();
+      
+      const updatedUser = await this.userRepository.save(user);
+      console.log('✅ Avatar uploaded successfully for user:', user.email);
+      
+      // Return updated user without password
+      const { password, ...profile } = updatedUser;
+      return profile;
+    } catch (error) {
+      console.error('❌ Error in uploadAvatar method:', error);
+      throw error;
+    }
+  }
+
+  async getProfile(id: string): Promise<any> {
+    try {
+      const user = await this.userRepository.findOneBy({ _id: new ObjectId(id) });
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+      
+      // Return user without password
+      const { password, ...profile } = user;
+      return profile;
+    } catch (error) {
+      console.error('❌ Error in getProfile method:', error);
+      throw error;
+    }
+  }
+
+  async updateProfile(id: string, updateData: {
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    phone?: string;
+    bio?: string;
+    avatar?: string;
+  }): Promise<any> {
+    try {
+      const user = await this.userRepository.findOneBy({ _id: new ObjectId(id) });
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      // Check if email is being updated and if it's already taken
+      if (updateData.email && updateData.email !== user.email) {
+        const existingUser = await this.userRepository.findOneBy({ 
+          email: updateData.email 
+        });
+        if (existingUser) {
+          throw new BadRequestException('Email already exists');
+        }
+      }
+
+      // Update only provided fields
+      Object.assign(user, updateData);
+      user.updatedAt = new Date();
+      
+      const updatedUser = await this.userRepository.save(user);
+      console.log('✅ Profile updated successfully for user:', user.email);
+      
+      // Return updated user without password
+      const { password, ...profile } = updatedUser;
+      return profile;
+    } catch (error) {
+      console.error('❌ Error in updateProfile method:', error);
       throw error;
     }
   }

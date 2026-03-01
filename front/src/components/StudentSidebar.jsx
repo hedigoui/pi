@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Mic, FileText, Settings, LogOut } from 'lucide-react';
+import { LayoutDashboard, Mic, FileText, Settings, LogOut, User } from 'lucide-react';
 import styles from './Sidebar.module.css';
 
 const StudentSidebar = () => {
@@ -54,6 +54,14 @@ const StudentSidebar = () => {
         >
           <FileText size={20} />
           <span>My Reports</span>
+        </NavLink>
+        
+        <NavLink 
+          to="/profile" 
+          className={({ isActive }) => `${styles.navItem} ${isActive ? styles.active : ''}`}
+        >
+          <User size={20} />
+          <span>Profile</span>
         </NavLink>
         
         <NavLink 

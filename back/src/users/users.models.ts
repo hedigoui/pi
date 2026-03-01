@@ -19,6 +19,18 @@ export class Users {
   @Column({ unique: true })
   email: string;
 
+  @Column({ nullable: true })
+  activationToken: string | undefined;
+
+  @Column({ nullable: true })
+  avatar: string;
+
+  @Column({ nullable: true })
+  phone: string;
+
+  @Column({ nullable: true })
+  bio: string;
+
   @Column()
   password: string;
 
