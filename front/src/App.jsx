@@ -5,6 +5,8 @@ import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import AuthCallback from './pages/AuthCallback';
 import Profile from './pages/Profile';
+import Messages from './pages/Messages';
+import Conversations from './pages/Conversations';
 
 // Student Pages
 import StudentDashboard from './pages/student/Dashboard';
@@ -34,6 +36,8 @@ function App() {
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/conversations" element={<Conversations />} />
+        <Route path="/messages/:userId" element={<Messages />} />
         {/* Student Routes */}
         <Route path="/student/dashboard" element={<StudentDashboard />} />
         <Route path="/student/practice" element={<StudentPractice />} />

@@ -4,9 +4,11 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
+import { CommunicationModule } from './communication/communication.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { Users } from './users/users.models';
+import { Message, Conversation, Appointment, Notification } from './communication/communication.models';
 
 @Module({
   imports: [
@@ -18,7 +20,7 @@ import { Users } from './users/users.models';
       host: 'localhost',
       port: 27017,
       database: 'evalAI',
-      entities: [Users],
+      entities: [Users, Message, Conversation, Appointment, Notification],
       synchronize: true, // À utiliser uniquement en développement
     }),
     JwtModule.register({
@@ -27,6 +29,7 @@ import { Users } from './users/users.models';
     }),
     UsersModule,
     AuthModule,
+    CommunicationModule,
   ],
   controllers: [AppController],
   providers: [AppService],
