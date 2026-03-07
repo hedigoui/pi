@@ -7,18 +7,18 @@ import {
   Body,
   Param,
   Query,
-  UseGuards,
-  Request,
   HttpCode,
   HttpStatus,
   BadRequestException,
   UseInterceptors,
   UploadedFile,
+  Request,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CommunicationService } from './communication.service';
 import { MessageType } from './communication.models';
 import type { Multer } from 'multer';
+import { extractUserFromToken } from '../auth/jwt.util';
 
 @Controller('communication')
 export class CommunicationController {
@@ -37,7 +37,9 @@ export class CommunicationController {
     @Request() req: any,
   ) {
     try {
-      const senderId = req.user.id;
+      // Get the actual user ID from the JWT token
+      const user = extractUserFromToken(req);
+      const senderId = user?.sub || 'temp-sender-id';
       const { receiverId, content, type = MessageType.TEXT } = body;
 
       const message = await this.communicationService.sendMessage(
@@ -64,16 +66,28 @@ export class CommunicationController {
     @Query('limit') limit?: string,
   ) {
     try {
-      const currentUserId = req.user.id;
+      // Get the actual user ID from the JWT token
+      const user = extractUserFromToken(req);
+      const currentUserId = user?.sub || 'temp-current-user-id';
+      
+      // Get messages
       const messages = await this.communicationService.getConversationMessages(
         currentUserId,
         userId,
         limit ? parseInt(limit) : 50,
       );
+      
+      // Get other user details
+      const otherUser = await this.communicationService.getUserById(userId);
 
       return {
         success: true,
         data: messages,
+        otherUser: otherUser || {
+          id: userId,
+          name: 'Unknown User',
+          role: 'user'
+        }
       };
     } catch (error) {
       throw new BadRequestException(error.message);
@@ -83,7 +97,9 @@ export class CommunicationController {
   @Get('conversations')
   async getUserConversations(@Request() req: any) {
     try {
-      const userId = req.user.id;
+      // Get the actual user ID from the JWT token
+      const user = extractUserFromToken(req);
+      const userId = user?.sub || 'temp-current-user-id';
       const conversations = await this.communicationService.getUserConversations(userId);
 
       return {
@@ -103,14 +119,13 @@ export class CommunicationController {
       receiverId: string;
       content: string;
     },
-    @Request() req: any,
   ) {
     try {
       if (!file) {
         throw new BadRequestException('No file uploaded');
       }
 
-      const senderId = req.user.id;
+      const senderId = 'temp-sender-id'; // TODO: Get from JWT token properly
       const { receiverId, content } = body;
 
       // For now, store file info as base64
@@ -148,17 +163,16 @@ export class CommunicationController {
   @HttpCode(HttpStatus.CREATED)
   async createAppointment(
     @Body() body: {
+      teacherId: string;
       studentId: string;
       title: string;
       scheduledTime: string;
       endTime: string;
       description?: string;
     },
-    @Request() req: any,
   ) {
     try {
-      const teacherId = req.user.id;
-      const { studentId, title, scheduledTime, endTime, description } = body;
+      const { teacherId, studentId, title, scheduledTime, endTime, description } = body;
 
       const appointment = await this.communicationService.createAppointment(
         teacherId,
@@ -180,12 +194,13 @@ export class CommunicationController {
   }
 
   @Get('appointments')
-  async getUserAppointments(@Request() req: any) {
+  async getUserAppointments() {
     try {
-      const userId = req.user.id;
-      const userRole = req.user.role;
+      // TODO: Get userId and userRole from JWT token properly
+      const userId = 'temp-user-id';
+      const userRole = 'instructor'; // TODO: Get from token
       
-      const appointments = await this.communicationService.getUserAppointments(userId, userRole);
+      const appointments = await this.communicationService.getAppointments(userId);
 
       return {
         success: true,
@@ -200,16 +215,16 @@ export class CommunicationController {
   async updateAppointmentStatus(
     @Param('id') id: string,
     @Body() body: { status: 'confirmed' | 'completed' | 'cancelled' },
-    @Request() req: any,
   ) {
     try {
-      const userId = req.user.id;
+      // TODO: Get userId from JWT token properly
+      const userId = 'temp-user-id';
       const { status } = body;
 
-      const appointment = await this.communicationService.updateAppointmentStatus(
+      const appointment = await this.communicationService.updateAppointment(
         id,
-        status,
         userId,
+        status,
       );
 
       return {
@@ -226,15 +241,12 @@ export class CommunicationController {
 
   @Get('notifications')
   async getNotifications(
-    @Request() req: any,
     @Query('unreadOnly') unreadOnly?: string,
   ) {
     try {
-      const userId = req.user.id;
-      const notifications = await this.communicationService.getNotifications(
-        userId,
-        unreadOnly === 'true',
-      );
+      // TODO: Get userId from JWT token properly
+      const userId = 'temp-user-id';
+      const notifications = await this.communicationService.getNotifications(userId);
 
       return {
         success: true,
@@ -248,16 +260,15 @@ export class CommunicationController {
   @Patch('notifications/:id/read')
   async markNotificationAsRead(
     @Param('id') id: string,
-    @Request() req: any,
   ) {
     try {
-      const userId = req.user.id;
-      const notification = await this.communicationService.markNotificationAsRead(id, userId);
+      // TODO: Get userId from JWT token properly
+      const userId = 'temp-user-id';
+      await this.communicationService.markNotificationAsRead(id);
 
       return {
         success: true,
         message: 'Notification marked as read',
-        data: notification,
       };
     } catch (error) {
       throw new BadRequestException(error.message);
@@ -265,9 +276,10 @@ export class CommunicationController {
   }
 
   @Patch('notifications/read-all')
-  async markAllNotificationsAsRead(@Request() req: any) {
+  async markAllNotificationsAsRead() {
     try {
-      const userId = req.user.id;
+      // TODO: Get userId from JWT token properly
+      const userId = 'temp-user-id';
       await this.communicationService.markAllNotificationsAsRead(userId);
 
       return {
@@ -282,9 +294,10 @@ export class CommunicationController {
   // ===== STUDENT-TEACHER INTERACTION ENDPOINTS =====
 
   @Get('students')
-  async getTeacherStudents(@Request() req: any) {
+  async getTeacherStudents() {
     try {
-      const teacherId = req.user.id;
+      // TODO: Get teacherId from JWT token properly
+      const teacherId = 'temp-teacher-id';
       
       // This would typically get students assigned to this teacher
       // For now, we'll return all students (you might want to add a relationship)
@@ -300,9 +313,10 @@ export class CommunicationController {
   }
 
   @Get('teachers')
-  async getStudentTeachers(@Request() req: any) {
+  async getStudentTeachers() {
     try {
-      const studentId = req.user.id;
+      // TODO: Get studentId from JWT token properly
+      const studentId = 'temp-student-id';
       
       // This would typically get teachers assigned to this student
       
@@ -324,10 +338,10 @@ export class CommunicationController {
       type: 'positive' | 'constructive' | 'general';
       relatedTo?: string; // Could be session ID, assignment ID, etc.
     },
-    @Request() req: any,
   ) {
     try {
-      const senderId = req.user.id;
+      // TODO: Get senderId from JWT token properly
+      const senderId = 'temp-sender-id';
       const { receiverId, feedback, type, relatedTo } = body;
 
       // Send feedback as a special message type
@@ -349,16 +363,16 @@ export class CommunicationController {
   }
 
   @Post('announcements')
-  async sendAnnouncement(
+  async createAnnouncement(
     @Body() body: {
       title: string;
       content: string;
       targetRole?: 'student' | 'instructor' | 'all';
     },
-    @Request() req: any,
   ) {
     try {
-      const senderId = req.user.id;
+      // TODO: Get senderId from JWT token properly
+      const senderId = 'temp-sender-id';
       const { title, content, targetRole = 'all' } = body;
 
       // This would typically send announcements to multiple users

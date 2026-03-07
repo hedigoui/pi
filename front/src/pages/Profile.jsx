@@ -253,34 +253,18 @@ const Profile = () => {
               {/* Avatar Section */}
               <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', marginBottom: '1.5rem' }}>
                 <div style={{ position: 'relative', display: 'inline-block', marginBottom: '1rem' }}>
-                  {formData.avatar ? (
-                    <img 
-                      src={formData.avatar} 
-                      alt="Profile" 
-                      style={{
-                        width: '120px',
-                        height: '120px',
-                        borderRadius: '50%',
-                        objectFit: 'cover',
-                        border: '4px solid var(--bg-secondary)',
-                        boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
-                      }}
-                    />
-                  ) : (
-                    <div style={{
+                  <img 
+                    src={formData.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent((formData.firstName + ' ' + formData.lastName) || 'user')}&backgroundColor=b6e3f4,c0aede,d1d4f9`} 
+                    alt="Profile" 
+                    style={{
                       width: '120px',
                       height: '120px',
                       borderRadius: '50%',
-                      background: 'var(--bg-tertiary)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
+                      objectFit: 'cover',
                       border: '4px solid var(--bg-secondary)',
-                      boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
-                    }}>
-                      <User size={50} style={{ color: 'var(--text-secondary)' }} />
-                    </div>
-                  )}
+                      boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+                    }}
+                  />
                   {editing && (
                     <label style={{
                       position: 'absolute',

@@ -88,6 +88,7 @@ const Users = () => {
         lastName: user.lastName,
         name: `${user.firstName} ${user.lastName}`,
         email: user.email,
+        avatar: user.avatar,
         role: user.role.charAt(0).toUpperCase() + user.role.slice(1),
         isActive: user.isActive,
         status: user.isActive ? 'Active' : 'Inactive',
@@ -421,22 +422,16 @@ const Users = () => {
                       <tr key={user.id}>
                         <td>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                            <div style={{ 
-                              width: '40px', 
-                              height: '40px', 
-                              borderRadius: '10px', 
-                              background: user.role === 'Admin' ? 'linear-gradient(135deg, #3b82f6, #2563eb)' : 
-                                        user.role === 'Instructor' ? 'linear-gradient(135deg, #22c55e, #16a34a)' :
-                                        'linear-gradient(135deg, #E31837, #B71C1C)',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              color: 'white',
-                              fontWeight: '600',
-                              fontSize: '0.85rem'
-                            }}>
-                              {user.name.charAt(0)}
-                            </div>
+                            <img 
+                              src={user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.name || 'user')}&backgroundColor=b6e3f4,c0aede,d1d4f9`} 
+                              alt={user.name}
+                              style={{
+                                width: '40px',
+                                height: '40px',
+                                borderRadius: '10px',
+                                objectFit: 'cover',
+                              }}
+                            />
                             <span style={{ fontWeight: '500' }}>{user.name}</span>
                           </div>
                         </td>

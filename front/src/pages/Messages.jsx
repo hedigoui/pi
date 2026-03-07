@@ -2,6 +2,25 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Send, Paperclip, Mic, Phone, Video, MoreVertical } from 'lucide-react';
 import styles from '../styles/shared.module.css';
+import StudentSidebar from '../components/StudentSidebar';
+import TeacherSidebar from '../components/TeacherSidebar';
+import AdminSidebar from '../components/AdminSidebar';
+
+// Avatar component - displays DiceBear avatar
+const Avatar = ({ name, avatar, size = 40 }) => {
+  return (
+    <img 
+      src={avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name || 'user')}&backgroundColor=b6e3f4,c0aede,d1d4f9`} 
+      alt={name || 'User'}
+      style={{
+        width: `${size}px`,
+        height: `${size}px`,
+        borderRadius: '50%',
+        objectFit: 'cover',
+      }}
+    />
+  );
+};
 
 const Messages = () => {
   const { userId } = useParams();
@@ -13,6 +32,42 @@ const Messages = () => {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef(null);
+  const loadMessagesRef = useRef(null);
+
+  // Define loadMessages function
+  const loadMessages = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setMessages([]);
+        return;
+      }
+
+      const response = await fetch(`http://localhost:3000/communication/messages/${userId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setMessages(data.data || []);
+        
+        // Set other user details from response
+        if (data.otherUser) {
+          setOtherUser(data.otherUser);
+        }
+      } else {
+        setMessages([]);
+      }
+    } catch (error) {
+      console.error('Error loading messages:', error);
+      setMessages([]);
+    }
+  };
+
+  // Store loadMessages in ref to access in useEffect
+  loadMessagesRef.current = loadMessages;
 
   useEffect(() => {
     const userData = JSON.parse(localStorage.getItem('user') || '{}');
@@ -23,42 +78,25 @@ const Messages = () => {
       return;
     }
     setLoading(false);
-  }, [navigate]);
+  }, []);
 
   useEffect(() => {
-    if (userId && user) {
+    if (userId && user && user.id) {
       loadMessages();
-      // In a real app, you'd also load other user info
-      setOtherUser({
-        id: userId,
-        name: 'Other User',
-        avatar: null,
-        role: user.role === 'instructor' ? 'student' : 'instructor'
-      });
+      
+      // Set up polling to check for new messages every 3 seconds
+      const intervalId = setInterval(() => {
+        loadMessagesRef.current?.();
+      }, 3000);
+      
+      // Clean up interval when component unmounts or userId changes
+      return () => clearInterval(intervalId);
     }
-  }, [userId, user]);
+  }, [userId, user?.id]);
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
-
-  const loadMessages = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:3000/communication/messages/${userId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setMessages(data.data || []);
-      }
-    } catch (error) {
-      console.error('Error loading messages:', error);
-    }
-  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -71,6 +109,11 @@ const Messages = () => {
     setSending(true);
     try {
       const token = localStorage.getItem('token');
+      if (!token) {
+        setSending(false);
+        return;
+      }
+
       const response = await fetch('http://localhost:3000/communication/messages', {
         method: 'POST',
         headers: {
@@ -85,8 +128,9 @@ const Messages = () => {
       });
 
       if (response.ok) {
+        const data = await response.json();
+        setMessages(prev => [...prev, data.data]);
         setNewMessage('');
-        await loadMessages();
       }
     } catch (error) {
       console.error('Error sending message:', error);
@@ -100,13 +144,10 @@ const Messages = () => {
     
     switch (user.role) {
       case 'student':
-        const StudentSidebar = require('../components/StudentSidebar').default;
         return <StudentSidebar />;
       case 'instructor':
-        const TeacherSidebar = require('../components/TeacherSidebar').default;
         return <TeacherSidebar />;
       case 'admin':
-        const AdminSidebar = require('../components/AdminSidebar').default;
         return <AdminSidebar />;
       default:
         return null;
@@ -149,7 +190,7 @@ const Messages = () => {
                 Select a Conversation
               </h2>
               <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', lineHeight: '1.5' }}>
-                Please choose a conversation from the list, or go back to browse all conversations.
+                Please choose a conversation from the Messages list to start chatting.
               </p>
               <button
                 onClick={() => navigate('/conversations')}
@@ -165,7 +206,7 @@ const Messages = () => {
                   textDecoration: 'none',
                 }}
               >
-                Browse Conversations
+                View Conversations
               </button>
             </div>
           </div>
@@ -191,23 +232,11 @@ const Messages = () => {
             justifyContent: 'space-between',
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <div style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '50%',
-                background: 'var(--bg-tertiary)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}>
-                {otherUser?.avatar ? (
-                  <img src={otherUser.avatar} alt={otherUser.name} style={{ width: '100%', height: '100%', borderRadius: '50%' }} />
-                ) : (
-                  <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                    {otherUser?.name?.charAt(0) || 'U'}
-                  </div>
-                )}
-              </div>
+              <Avatar 
+                name={otherUser?.name}
+                avatar={otherUser?.avatar}
+                size={40}
+              />
               <div>
                 <h3 style={{ color: 'var(--text-primary)', fontSize: '1rem', fontWeight: '600', margin: 0 }}>
                   {otherUser?.name || 'Unknown User'}
@@ -286,30 +315,34 @@ const Messages = () => {
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {messages.map((message, index) => (
-                  <div
-                    key={index}
-                    style={{
-                      display: 'flex',
-                      justifyContent: message.senderId === user.id ? 'flex-end' : 'flex-start',
-                      maxWidth: '70%',
-                    }}
-                  >
-                    <div style={{
-                      background: message.senderId === user.id 
-                        ? 'linear-gradient(135deg, #E31837, #B71C1C)' 
-                        : 'var(--bg-tertiary)',
-                      color: message.senderId === user.id ? 'white' : 'var(--text-primary)',
-                      padding: '0.75rem 1rem',
-                      borderRadius: message.senderId === user.id 
-                        ? '16px 16px 4px 16px' 
-                        : '16px 16px 16px 4px',
-                      wordWrap: 'break-word',
-                    }}>
-                      {message.content}
+                {messages.map((message) => {
+                  const currentUserId = user?.id || user?._id;
+                  const isSentByMe = message.senderId === currentUserId;
+                  return (
+                    <div
+                      key={message._id || message.id}
+                      style={{
+                        display: 'flex',
+                        justifyContent: isSentByMe ? 'flex-end' : 'flex-start',
+                        maxWidth: '70%',
+                      }}
+                    >
+                      <div style={{
+                        background: isSentByMe 
+                          ? 'linear-gradient(135deg, #E31837, #B71C1C)' 
+                          : 'var(--bg-tertiary)',
+                        color: isSentByMe ? 'white' : 'var(--text-primary)',
+                        padding: '0.75rem 1rem',
+                        borderRadius: isSentByMe 
+                          ? '16px 16px 4px 16px' 
+                          : '16px 16px 16px 4px',
+                        wordWrap: 'break-word',
+                      }}>
+                        {message.content}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
                 <div ref={messagesEndRef} />
               </div>
             )}

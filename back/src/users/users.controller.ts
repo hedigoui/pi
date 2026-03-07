@@ -51,6 +51,22 @@ export class UsersController {
     return this.usersService.findAll();
   }
 
+  @Get('students')
+  async getStudents() {
+    try {
+      console.log('🔍 Controller: Getting students...');
+      const students = await this.usersService.getStudents();
+      console.log(`🔍 Controller: Returning ${students.length} students`);
+      return {
+        success: true,
+        data: students
+      };
+    } catch (error) {
+      console.error('Error getting students:', error);
+      throw error;
+    }
+  }
+
   // Specific routes must come BEFORE parameterized routes
   @Post('signin')
   @HttpCode(HttpStatus.OK)

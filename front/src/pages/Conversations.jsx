@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, MessageCircle, Phone, Video, MoreVertical, User } from 'lucide-react';
 import TeacherSidebar from '../components/TeacherSidebar';
@@ -6,12 +6,72 @@ import StudentSidebar from '../components/StudentSidebar';
 import AdminSidebar from '../components/AdminSidebar';
 import styles from '../styles/shared.module.css';
 
+// Avatar component - displays DiceBear avatar
+const Avatar = ({ name, avatar, size = 40 }) => {
+  return (
+    <img 
+      src={avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name || 'user')}&backgroundColor=b6e3f4,c0aede,d1d4f9`} 
+      alt={name || 'User'}
+      style={{
+        width: `${size}px`,
+        height: `${size}px`,
+        borderRadius: '50%',
+        objectFit: 'cover',
+      }}
+    />
+  );
+};
+
 const Conversations = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const loadConversationsRef = useRef(null);
+
+  // Define loadConversations function
+  const loadConversations = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setConversations([]);
+        return;
+      }
+
+      const response = await fetch('http://localhost:3000/communication/conversations', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Deduplicate conversations - keep only one per other participant
+        const conversationsData = data.data || [];
+        const seenParticipants = new Set();
+        const uniqueConversations = conversationsData.filter(conv => {
+          const otherParticipantId = conv.participantIds?.find(id => id !== user?.id);
+          if (!otherParticipantId || seenParticipants.has(otherParticipantId)) {
+            return false;
+          }
+          seenParticipants.add(otherParticipantId);
+          return true;
+        });
+        
+        setConversations(uniqueConversations);
+      } else {
+        setConversations([]);
+      }
+    } catch (error) {
+      console.error('Error loading conversations:', error);
+      setConversations([]);
+    }
+  };
+
+  // Store loadConversations in ref to access in useEffect
+  loadConversationsRef.current = loadConversations;
 
   useEffect(() => {
     const userData = JSON.parse(localStorage.getItem('user') || '{}');
@@ -22,81 +82,30 @@ const Conversations = () => {
       return;
     }
     setLoading(false);
-  }, [navigate]);
+  }, []);
 
   useEffect(() => {
-    if (user) {
+    if (user && user.id) {
       loadConversations();
+      
+      // Set up polling to check for new conversations every 3 seconds
+      const intervalId = setInterval(() => {
+        loadConversationsRef.current?.();
+      }, 3000);
+      
+      // Clean up interval when component unmounts or user changes
+      return () => clearInterval(intervalId);
     }
-  }, [user]);
-
-  const loadConversations = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3000/communication/conversations', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setConversations(data.data || []);
-      }
-    } catch (error) {
-      console.error('Error loading conversations:', error);
-      // For demo purposes, create mock conversations
-      const mockConversations = user.role === 'instructor' ? [
-        {
-          _id: '1',
-          participantIds: [user.id, 'student1'],
-          lastMessageContent: 'Hi teacher, I need help with my assignment',
-          lastMessageTime: new Date(Date.now() - 1000 * 60 * 5), // 5 minutes ago
-          otherParticipant: {
-            id: 'student1',
-            name: 'Sarah Miller',
-            email: 'sarah@example.com',
-            role: 'student',
-            avatar: null
-          }
-        },
-        {
-          _id: '2',
-          participantIds: [user.id, 'student2'],
-          lastMessageContent: 'Thank you for the feedback!',
-          lastMessageTime: new Date(Date.now() - 1000 * 60 * 30), // 30 minutes ago
-          otherParticipant: {
-            id: 'student2',
-            name: 'John Doe',
-            email: 'john@example.com',
-            role: 'student',
-            avatar: null
-          }
-        }
-      ] : user.role === 'student' ? [
-        {
-          _id: '1',
-          participantIds: [user.id, 'teacher1'],
-          lastMessageContent: 'Great job on your practice session!',
-          lastMessageTime: new Date(Date.now() - 1000 * 60 * 2), // 2 minutes ago
-          otherParticipant: {
-            id: 'teacher1',
-            name: 'Dr. Smith',
-            email: 'smith@example.com',
-            role: 'instructor',
-            avatar: null
-          }
-        }
-      ] : [];
-      setConversations(mockConversations);
-    }
-  };
+  }, [user?.id]);
 
   const filteredConversations = conversations.filter(conv => {
     if (!searchTerm) return true;
+    // Search by participant name, email, or last message content
     const otherUser = conv.otherParticipant;
-    return otherUser?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-           otherUser?.email?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesName = otherUser?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesEmail = otherUser?.email?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesMessage = conv.lastMessageContent?.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesName || matchesEmail || matchesMessage;
   });
 
   const getSidebar = () => {
@@ -140,25 +149,6 @@ const Conversations = () => {
               <h1 className={styles.pageTitle}>Messages</h1>
               <p className={styles.pageSubtitle}>Communicate with students and teachers</p>
             </div>
-            <button
-              style={{
-                padding: '0.6rem 1.4rem',
-                background: 'linear-gradient(135deg, #E31837, #B71C1C)',
-                border: 'none',
-                borderRadius: '12px',
-                color: '#fff',
-                fontWeight: '600',
-                fontSize: '0.88rem',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                boxShadow: '0 4px 20px rgba(227,24,55,0.3)',
-              }}
-            >
-              <MessageCircle size={16} />
-              New Message
-            </button>
           </div>
 
           {/* Search Bar */}
@@ -210,13 +200,13 @@ const Conversations = () => {
                   {searchTerm 
                     ? 'No conversations found matching your search.' 
                     : user?.role === 'instructor' 
-                      ? 'Start a conversation with your students by clicking "New Message" or navigate to their profile.'
-                      : 'Reach out to your teachers for help and guidance.'
+                      ? 'Start conversations with your students by clicking on their profiles or accessing the Students page.'
+                      : 'Reach out to your teachers for help and guidance through the Messages system.'
                   }
                 </p>
-                {!searchTerm && (
+                {user?.role === 'instructor' && (
                   <button
-                    onClick={() => navigate('/messages')}
+                    onClick={() => navigate('/teacher/students')}
                     style={{
                       padding: '0.75rem 1.5rem',
                       background: 'linear-gradient(135deg, #E31837, #B71C1C)',
@@ -229,16 +219,24 @@ const Conversations = () => {
                       marginTop: '1rem',
                     }}
                   >
-                    Browse All Users
+                    View Students
                   </button>
                 )}
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column' }}>
-                {filteredConversations.map((conversation) => (
+                {filteredConversations.map((conversation) => {
+                  // Use the otherParticipant data from backend
+                  const otherParticipant = conversation.otherParticipant;
+                  
+                  return (
                   <div
-                    key={conversation._id}
-                    onClick={() => navigate(`/messages/${conversation.otherParticipant.id}`)}
+                    key={conversation._id || conversation.id || `conversation-${Math.random()}`}
+                    onClick={() => {
+                      if (otherParticipant?.id) {
+                        navigate(`/messages/${otherParticipant.id}`);
+                      }
+                    }}
                     style={{
                       padding: '1rem 1.5rem',
                       borderBottom: '1px solid var(--border-primary)',
@@ -255,37 +253,11 @@ const Conversations = () => {
                       e.currentTarget.style.background = 'var(--bg-secondary)';
                     }}
                   >
-                    <div style={{
-                      width: '48px',
-                      height: '48px',
-                      borderRadius: '50%',
-                      background: 'var(--bg-tertiary)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                    }}>
-                      {conversation.otherParticipant?.avatar ? (
-                        <img 
-                          src={conversation.otherParticipant.avatar} 
-                          alt={conversation.otherParticipant.name}
-                          style={{ 
-                            width: '100%', 
-                            height: '100%', 
-                            borderRadius: '50%',
-                            objectFit: 'cover' 
-                          }} 
-                        />
-                      ) : (
-                        <div style={{ 
-                          color: 'var(--text-secondary)', 
-                          fontSize: '1.2rem',
-                          fontWeight: '600' 
-                        }}>
-                          {conversation.otherParticipant?.name?.charAt(0) || 'U'}
-                        </div>
-                      )}
-                    </div>
+                    <Avatar 
+                      name={conversation.otherParticipant?.name}
+                      avatar={conversation.otherParticipant?.avatar}
+                      size={48}
+                    />
                     
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{
@@ -300,7 +272,7 @@ const Conversations = () => {
                           fontWeight: '600',
                           margin: 0 
                         }}>
-                          {conversation.otherParticipant?.name || 'Unknown User'}
+                          {otherParticipant?.name || 'Unknown User'}
                         </h3>
                         <span style={{
                           fontSize: '0.75rem',
@@ -312,7 +284,7 @@ const Conversations = () => {
                           textTransform: 'uppercase',
                           fontWeight: '500',
                         }}>
-                          {conversation.otherParticipant?.role || 'User'}
+                          {otherParticipant?.role || 'User'}
                         </span>
                       </div>
                       <p style={{ 
@@ -340,7 +312,8 @@ const Conversations = () => {
                       }
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

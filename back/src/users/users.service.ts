@@ -24,6 +24,12 @@ export class UsersService {
     private readonly emailService: EmailService,
   ) {}
 
+  // Generate avatar URL using DiceBear API
+  private generateAvatarUrl(userId: string, firstName: string, lastName: string): string {
+    const seed = `${userId}-${firstName}-${lastName}`;
+    return `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(seed)}&backgroundColor=b6e3f4,c0aede,d1d4f9`;
+  }
+
   async create(data: {
     email: string;
     password: string;
@@ -33,8 +39,6 @@ export class UsersService {
     isActive: boolean;
   }): Promise<Users> {
     try {
-      console.log('📝 Creating user with email:', data.email);
-      
       const existingUser = await this.userRepository.findOneBy({
         email: data.email,
       });
@@ -44,8 +48,8 @@ export class UsersService {
       }
 
       const hashedPassword = await bcrypt.hash(data.password, 10);
-      console.log('✅ Password hashed successfully');
-
+      
+      // Create user object first to get the ID
       const user = this.userRepository.create({
         email: data.email,
         password: hashedPassword,
@@ -58,7 +62,17 @@ export class UsersService {
       });
 
       const savedUser = await this.userRepository.save(user);
-      console.log('✅ User saved successfully with ID:', savedUser._id);
+      
+      // Generate avatar URL using the saved user ID
+      const avatarUrl = this.generateAvatarUrl(
+        savedUser._id.toString(),
+        data.firstName,
+        data.lastName
+      );
+      
+      // Update user with avatar
+      savedUser.avatar = avatarUrl;
+      await this.userRepository.save(savedUser);
       
       // Send welcome email (don't await - let it run in background)
       this.emailService.sendWelcomeEmail(
@@ -72,7 +86,6 @@ export class UsersService {
       const { password, ...result } = savedUser;
       return result as Users;
     } catch (error) {
-      console.error('❌ Error in create method:', error);
       throw error;
     }
   }
@@ -155,6 +168,32 @@ export class UsersService {
     await this.userRepository.remove(user);
     console.log(`✅ User deleted: ${user.email}`);
     return { message: 'User deleted successfully' };
+  }
+
+  async getStudents(): Promise<Users[]> {
+    try {
+      console.log('🔍 Fetching all students from database');
+      console.log('🔍 Looking for role:', UserRole.STUDENT);
+      
+      // First, let's see all users to debug
+      const allUsers = await this.userRepository.find();
+      console.log(`📊 Total users in database: ${allUsers.length}`);
+      console.log('📊 All users:', allUsers.map(u => ({ id: u._id, email: u.email, role: u.role })));
+      
+      // Now filter for students
+      const students = await this.userRepository.find({ 
+        where: { role: UserRole.STUDENT },
+        order: { createdAt: 'DESC' }
+      });
+      
+      console.log(`✅ Found ${students.length} students`);
+      console.log('📊 Students found:', students.map(s => ({ id: s._id, email: s.email, role: s.role })));
+      
+      return students;
+    } catch (error) {
+      console.error('❌ Error fetching students:', error);
+      throw error;
+    }
   }
 
   async signin(email: string, password: string): Promise<{
